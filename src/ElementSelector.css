@@ -1,0 +1,13 @@
+.element-selector li {
+    display: inline-block;
+    cursor: pointer;
+}
+
+.circle-selector {
+    fill: none;
+    stroke: black;
+}
+
+.line-selector {
+    stroke: black;
+}
