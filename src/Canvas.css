@@ -1,3 +1,7 @@
-svg path {
+.svg-canvas path {
     stroke: black;
+}
+
+.svg-canvas {
+    width: 100vw;
 }

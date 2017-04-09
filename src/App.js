@@ -10,7 +10,8 @@ class App extends Component {
         super(props);
         this.state = {
             selection: null
-        }
+        };
+        this._setSelection = this._setSelection.bind(this);
     }
 
     _setSelection(selection) {
@@ -24,7 +25,7 @@ class App extends Component {
                     <img src={logo} className="App-logo" alt="logo" />
                     <h2>Welcome to React</h2>
                 </div>
-                <Touch />
+                <Touch selection={this.state.selection} />
                 <ElementSelector setSelection={this._setSelection} />
             </div>
         );

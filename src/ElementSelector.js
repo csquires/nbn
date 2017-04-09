@@ -3,8 +3,6 @@ import './ElementSelector.css';
 
 class ElementSelector extends Component {
 
-
-
     render() {
         return (
             <ul className='element-selector'>
@@ -24,5 +22,9 @@ class ElementSelector extends Component {
         );
     }
 }
+
+ElementSelector.propTypes = {
+    setSelection: React.PropTypes.func.isRequired
+};
 
 export default ElementSelector;
