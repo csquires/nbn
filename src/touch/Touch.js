@@ -30,7 +30,9 @@ class Touch extends Component {
             ongoingTouchMap: Map(),
             lastTouchKey: 0,
             currentCircleKey: 0,
-            lastLineKey: 0
+            isCreatingCircle: false,
+            isCreatingArrow: false,
+            currentArrowKey: 0
         };
         this._handleTouchStart = this._handleTouchStart.bind(this);
         this._handleTouchMove = this._handleTouchMove.bind(this);
@@ -82,22 +84,38 @@ class Touch extends Component {
     }
 
     _handleMouseDown(e) {
+        e.preventDefault();
         const mouseX = e.pageX;
         const mouseY = e.pageY;
-        console.log('mouseDown');
-        console.log(this.props.selection);
         switch(this.props.selection) {
             case 'circle':
-                console.log("making circle")
+                this.setState({isCreatingCircle: true});
                 this.canvas.startCircle(this.state.currentCircleKey, mouseX, mouseY);
+                break;
+            case 'arrow':
+                this.setState({isCreatingArrow: true});
+                this.canvas.startArrow(this.state.currentArrowKey, mouseX, mouseY);
+                break;
+            default:
                 break;
         }
     }
 
     _handleMouseMove(e) {
+        const mouseX = e.pageX;
+        const mouseY = e.pageY;
         switch(this.props.selection) {
             case 'circle':
-
+                if (this.state.isCreatingCircle) {
+                    this.canvas.updateCircle(this.state.currentCircleKey, mouseX, mouseY);
+                }
+                break;
+            case 'arrow':
+                if (this.state.isCreatingArrow) {
+                    this.canvas.updateArrow(this.state.currentArrowKey, mouseX, mouseY);
+                }
+                break;
+            default:
                 break;
         }
     }
@@ -105,7 +123,12 @@ class Touch extends Component {
     _handleMouseUp(e) {
         switch(this.props.selection) {
             case 'circle':
-                // this.canvas.drawPoint();
+                this.setState({isCreatingCircle: false, currentCircleKey: this.state.currentCircleKey + 1});
+                break;
+            case 'arrow':
+                this.setState({isCreatingArrow: false, currentArrowKey: this.state.currentArrowKey + 1});
+                break;
+            default:
                 break;
         }
     }
@@ -117,7 +140,7 @@ class Touch extends Component {
             if (oldTouch) {
                 const key = oldTouch.get('key');
                 const oldTouchCoords = oldTouch.get('touchCoords');
-                this.canvas.drawLine(key, oldTouchCoords, newTouch);
+                this.canvas.updateStroke(key, oldTouchCoords, newTouch);
                 const newOngoingTouchMap = this.state.ongoingTouchMap.setIn([touchId, 'touchCoords'], newTouch);
                 this.setState({ongoingTouchMap: newOngoingTouchMap});
             } else {

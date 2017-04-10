@@ -1,7 +1,12 @@
+.svg-canvas {
+    width: 100vw;
+}
+
 .svg-canvas path {
     stroke: black;
 }
 
-.svg-canvas {
-    width: 100vw;
+.svg-canvas circle {
+    stroke: black;
+    fill: none;
 }

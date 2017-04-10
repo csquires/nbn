@@ -12,11 +12,11 @@ class ElementSelector extends Component {
                     </svg>
                     <p>Circle</p>
                 </li>
-                <li onClick={() => this.props.setSelection('line')}>
+                <li onClick={() => this.props.setSelection('arrow')}>
                     <svg viewBox='0 0 100 100'>
-                        <line x1={0} y1={0} x2={100} y2={100} className='line-selector' />
+                        <line x1={0} y1={0} x2={100} y2={100} className='arrow-selector' />
                     </svg>
-                    <p>Line</p>
+                    <p>Arrow</p>
                 </li>
             </ul>
         );
