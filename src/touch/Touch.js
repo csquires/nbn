@@ -3,6 +3,7 @@ import './Touch.css';
 import Canvas from '../Canvas';
 import _ from 'lodash';
 import { Map } from 'immutable';
+import * as utils from '../utils';
 
 // const mapTouches = (touches, f) => {
 //     const numTouches = touches.length;
@@ -16,7 +17,6 @@ import { Map } from 'immutable';
 const eachTouch = (touches, f) => {
     const numTouches = touches.length;
     _.range(numTouches).forEach((i) => {
-        console.log('i=',i);
         f(touches[i]);
     });
 };
@@ -30,9 +30,9 @@ class Touch extends Component {
             ongoingTouchMap: Map(),
             lastTouchKey: 0,
             currentCircleKey: 0,
-            isCreatingCircle: false,
-            isCreatingArrow: false,
-            currentArrowKey: 0
+            currentArrowKey: 0,
+            currentBoxKey: 0,
+            isMouseDown: false
         };
         this._handleTouchStart = this._handleTouchStart.bind(this);
         this._handleTouchMove = this._handleTouchMove.bind(this);
@@ -41,8 +41,20 @@ class Touch extends Component {
         this._handleMouseMove = this._handleMouseMove.bind(this);
         this._handleMouseUp = this._handleMouseUp.bind(this);
         this._addTouches = this._addTouches.bind(this);
+        const thisComponent = this;
+        this.listenFor = utils.listenFor([
+            {
+                command: 'clear',
+                action: () => thisComponent.canvas.clear()
+            },
+            {
+                command: 'undo',
+                action: () => thisComponent.canvas.undo()
+            }
+        ])
     }
 
+    // lifecycle
     componentDidMount() {
         window.addEventListener('touchstart', this._handleTouchStart);
         window.addEventListener('touchmove', this._handleTouchMove);
@@ -52,7 +64,6 @@ class Touch extends Component {
         window.addEventListener('mousemove', this._handleMouseMove);
         window.addEventListener('mouseup', this._handleMouseUp);
     }
-
     componentWillUnmount() {
         window.removeEventListener('touchstart');
         window.removeEventListener('touchmove');
@@ -62,88 +73,102 @@ class Touch extends Component {
         window.removeEventListener('mousemove');
         window.removeEventListener('mouseup');
     }
+    componentWillReceiveProps(nextProps) {
+        this.listenFor(nextProps.transcript, nextProps.resetTranscript)
+    }
 
+    // touch events
     _handleTouchStart(e) {
         e.preventDefault();
+        console.log(e);
+        console.log('touch start');
         const touches = e.changedTouches;
         this._addTouches(touches);
     }
-
     _handleTouchMove(e) {
-        e.preventDefault();
+        console.log('touch move');
         const touches = e.changedTouches;
         this._addTouches(touches);
     }
-
     _handleTouchEnd(e) {
-        e.preventDefault();
+        console.log('touch end');
         const touches = e.changedTouches;
         eachTouch(touches, (touch) => {
             this.setState({ongoingTouchMap: this.state.ongoingTouchMap.set(touch.identifier, null)})
         })
     }
 
+    // mouse events
     _handleMouseDown(e) {
         e.preventDefault();
         const mouseX = e.pageX;
         const mouseY = e.pageY;
+        this.setState({isMouseDown: true});
         switch(this.props.selection) {
             case 'circle':
-                this.setState({isCreatingCircle: true});
                 this.canvas.startCircle(this.state.currentCircleKey, mouseX, mouseY);
                 break;
             case 'arrow':
-                this.setState({isCreatingArrow: true});
                 this.canvas.startArrow(this.state.currentArrowKey, mouseX, mouseY);
+                break;
+            case 'box':
+                this.canvas.startBox(this.state.currentBoxKey, mouseX, mouseY);
                 break;
             default:
                 break;
         }
     }
-
     _handleMouseMove(e) {
         const mouseX = e.pageX;
         const mouseY = e.pageY;
-        switch(this.props.selection) {
-            case 'circle':
-                if (this.state.isCreatingCircle) {
+        if (this.state.isMouseDown) {
+            e.preventDefault();
+            switch(this.props.selection) {
+                case 'circle':
                     this.canvas.updateCircle(this.state.currentCircleKey, mouseX, mouseY);
-                }
-                break;
-            case 'arrow':
-                if (this.state.isCreatingArrow) {
+                    break;
+                case 'arrow':
                     this.canvas.updateArrow(this.state.currentArrowKey, mouseX, mouseY);
-                }
-                break;
-            default:
-                break;
+                    break;
+                case 'box':
+                    this.canvas.updateBox(this.state.currentBoxKey, mouseX, mouseY);
+                    break;
+                default:
+                    break;
+            }
         }
     }
-
     _handleMouseUp(e) {
+        this.setState({isMouseDown: false});
         switch(this.props.selection) {
             case 'circle':
-                this.setState({isCreatingCircle: false, currentCircleKey: this.state.currentCircleKey + 1});
+                this.setState({currentCircleKey: this.state.currentCircleKey + 1});
                 break;
             case 'arrow':
-                this.setState({isCreatingArrow: false, currentArrowKey: this.state.currentArrowKey + 1});
+                this.setState({currentArrowKey: this.state.currentArrowKey + 1});
+                break;
+            case 'box':
+                this.setState({currentBoxKey: this.state.currentBoxKey + 1});
                 break;
             default:
                 break;
         }
     }
 
+    // helper
     _addTouches(touchesToAdd) {
         eachTouch(touchesToAdd, (newTouch) => {
             const touchId = newTouch.identifier;
             const oldTouch = this.state.ongoingTouchMap.get(touchId);
             if (oldTouch) {
+                console.log('old touch');
                 const key = oldTouch.get('key');
                 const oldTouchCoords = oldTouch.get('touchCoords');
                 this.canvas.updateStroke(key, oldTouchCoords, newTouch);
                 const newOngoingTouchMap = this.state.ongoingTouchMap.setIn([touchId, 'touchCoords'], newTouch);
                 this.setState({ongoingTouchMap: newOngoingTouchMap});
             } else {
+                console.log('new touch');
                 const newOngoingTouchMap = this.state.ongoingTouchMap.set(touchId, Map({
                     touchCoords: newTouch,
                     key: this.state.lastTouchKey + 1

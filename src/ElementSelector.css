@@ -1,6 +1,31 @@
-.element-selector li {
+.selector-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.selector-container ul {
+    display: inline-block;
+}
+
+.selector-container h3 {
+    display: inline-block;
+}
+
+.selector-list li {
     display: inline-block;
     cursor: pointer;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border: black;
+    border-style: solid;
+    border-width: 1px;
+}
+
+.selector-list li svg {
+    height: 100px;
 }
 
 .circle-selector {
@@ -10,4 +35,13 @@
 
 .arrow-selector {
     stroke: black;
+}
+
+.box-selector {
+    stroke: black;
+    fill: none;
+}
+
+.selected {
+    background-color: yellow;
 }
