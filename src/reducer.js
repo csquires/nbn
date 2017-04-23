@@ -1,11 +1,12 @@
 import {combineReducers} from 'redux';
 import shapesReducer from './reducers/shapesReducer';
 import modeReducer from './reducers/modeReducer';
-import undoable from 'redux-undo-immutable';
+import {reducer as notifications} from 'react-notification-system-redux';
 
 const reducer = combineReducers({
-    shapes: undoable(shapesReducer),
-    modeReducer
+    shapes: shapesReducer,
+    modeReducer: modeReducer,
+    notifications
 });
 
 export default reducer;

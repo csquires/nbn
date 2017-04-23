@@ -6,12 +6,12 @@
     "immutable": "^3.8.1",
     "react": "^15.5.2",
     "react-dom": "^15.5.2",
+    "react-notification-system": "^0.2.13",
+    "react-notification-system-redux": "^1.0.11",
     "react-redux": "^5.0.4",
     "react-shapes": "^0.1.0",
     "react-speech-recognition": "^1.0.1",
     "redux": "^3.6.0",
-    "redux-undo": "^0.6.1",
-    "redux-undo-immutable": "^0.2.0",
     "synaptic": "^1.0.10"
   },
   "devDependencies": {

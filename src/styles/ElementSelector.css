@@ -42,6 +42,6 @@
     fill: none;
 }
 
-.selected {
+.selector-list > .selected {
     background-color: yellow;
 }

@@ -8,3 +8,13 @@ export const setSelection = (selection) => {
         }
     }
 };
+
+export const setNotificationSettings = (notificationName, settings) => {
+    return {
+        type: ActionTypes.NOTIFICATION_SETTINGS.SET,
+        payload: {
+            notification_name: notificationName,
+            settings: settings
+        }
+    }
+};

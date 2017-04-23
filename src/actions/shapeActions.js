@@ -30,3 +30,25 @@ export const addBox = (cx, cy) => {
         }
     }
 };
+
+export const undo = () => {
+    return {
+        type: ActionTypes.UNDO
+    }
+};
+
+export const changeShapeSelection = ({shape, key}) => {
+    return {
+        type: ActionTypes.SHAPES.CHANGE_SELECTION,
+        payload: {
+            shape: shape,
+            key: key
+        }
+    }
+};
+
+export const deleteSelectedShapes = () => {
+    return {
+        type: ActionTypes.SHAPES.DELETE_SELECTED,
+    }
+};

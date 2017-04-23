@@ -2,10 +2,10 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 // style
-import './ElementSelector.css';
+import '../styles/ElementSelector.css';
 // other
-import * as utils from './utils/utils';
-import * as modeActions from './actions/modeActions';
+import * as utils from '../utils/utils';
+import * as modeActions from '../actions/modeActions';
 
 
 class ElementSelector extends Component {
@@ -34,7 +34,7 @@ class ElementSelector extends Component {
     }
 
     componentWillReceiveProps(nextProps) {
-        this.listenFor(nextProps.transcript, nextProps.resetTranscript);
+        this.listenFor(nextProps);
     }
 
     render() {
@@ -65,9 +65,6 @@ class ElementSelector extends Component {
         );
     }
 }
-
-ElementSelector.propTypes = {
-};
 
 const mapStateToProps = (state) => ({
     selection: state.modeReducer.get('selection')

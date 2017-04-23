@@ -28,3 +28,7 @@
     stroke: black;
     fill: none;
 }
+
+.svg-canvas > .selected {
+    stroke: red;
+}
