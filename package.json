@@ -11,6 +11,7 @@
     "react-speech-recognition": "^1.0.1",
     "redux": "^3.6.0",
     "redux-undo": "^0.6.1",
+    "redux-undo-immutable": "^0.2.0",
     "synaptic": "^1.0.10"
   },
   "devDependencies": {

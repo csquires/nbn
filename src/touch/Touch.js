@@ -1,8 +1,13 @@
+// external
 import React, { Component } from 'react';
-import './Touch.css';
-import Canvas from '../Canvas';
 import _ from 'lodash';
 import { Map } from 'immutable';
+import { connect } from 'react-redux';
+// style
+import './Touch.css';
+// components
+import Canvas from '../Canvas';
+// other
 import * as utils from '../utils/utils';
 
 // const mapTouches = (touches, f) => {
@@ -104,15 +109,16 @@ class Touch extends Component {
         const mouseX = e.pageX;
         const mouseY = e.pageY;
         this.setState({isMouseDown: true});
+        console.log('here');
         switch(this.props.selection) {
             case 'circle':
-                this.canvas.startCircle(this.state.currentCircleKey, mouseX, mouseY);
+                this.canvas.getWrappedInstance().startCircle(mouseX, mouseY);
                 break;
             case 'arrow':
-                this.canvas.startArrow(this.state.currentArrowKey, mouseX, mouseY);
+                this.canvas.getWrappedInstance().startArrow(mouseX, mouseY);
                 break;
             case 'box':
-                this.canvas.startBox(this.state.currentBoxKey, mouseX, mouseY);
+                this.canvas.getWrappedInstance().startBox(mouseX, mouseY);
                 break;
             default:
                 break;
@@ -189,7 +195,14 @@ class Touch extends Component {
 }
 
 Touch.propTypes = {
-    selection: React.PropTypes.string
 };
 
-export default Touch;
+const mapStateToProps = (state) => ({
+    selection: state.modeReducer.get('selection')
+});
+
+const mapDispatchToProps = (dispatch) => ({
+
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(Touch);

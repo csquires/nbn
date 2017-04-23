@@ -1,6 +1,6 @@
 // external
 import React, { Component } from 'react';
-import { connect } from 'immutable';
+import { connect } from 'react-redux';
 // style
 import './ElementSelector.css';
 // other

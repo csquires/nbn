@@ -1,6 +1,5 @@
 // external
 import React, { Component } from 'react';
-import { Map, List } from 'immutable';
 import { connect } from 'react-redux';
 // style
 import './Canvas.css';
@@ -12,7 +11,6 @@ const SVG_HEIGHT = 600;
 const CIRCLE_RADIUS = SVG_WIDTH*0.02;
 const BOX_WIDTH = SVG_WIDTH*0.04;
 const BOX_HEIGHT = SVG_WIDTH*0.04;
-const dist = (x1, y1, x2, y2) => Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
 
 
 class Canvas extends Component {
@@ -24,6 +22,8 @@ class Canvas extends Component {
         };
         this._updateSvgClass = this._updateSvgClass.bind(this);
         this._toCanvasCoordinates = this._toCanvasCoordinates.bind(this);
+        this.startBox = this.startBox.bind(this);
+        this.startCircle = this.startCircle.bind(this);
     }
 
     // lifecycle
@@ -113,9 +113,9 @@ Canvas.propTypes = {
 };
 
 const mapStateToProps = (state) => ({
-    circles: state.shapes.get('circles'),
-    arrows: state.shapes.get('arrows'),
-    boxes: state.shapes.get('boxes')
+    circles: state.shapes.present.get('circles'),
+    arrows: state.shapes.present.get('arrows'),
+    boxes: state.shapes.present.get('boxes')
 });
 
 const mapDispatchToProps = (dispatch) => ({
@@ -124,4 +124,4 @@ const mapDispatchToProps = (dispatch) => ({
     addArrow: (source, target) => dispatch(shapeActions.addArrow(source, target))
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(Canvas);
+export default connect(mapStateToProps, mapDispatchToProps, null, {withRef: true})(Canvas);

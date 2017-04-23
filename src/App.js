@@ -9,7 +9,6 @@ class App extends Component {
 
     constructor(props) {
         super(props);
-        this._setSelection = this._setSelection.bind(this);
     }
 
     render() {

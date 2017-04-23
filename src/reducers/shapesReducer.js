@@ -1,40 +1,45 @@
 import { Map, List } from 'immutable';
-import * as utils from 'src/utils/utils';
-import ActionTypes from 'src/utils/ActionTypes';
+import ActionTypes from '../utils/ActionTypes';
 
 const initialState = Map({
-    strokes: Map({}),
     circles: Map({}),
-    arrows: Map({}),
+    arrows: List([]),
     boxes: Map({}),
+    lastCircleKey: 0,
+    lastBoxKey: 0,
 });
 
 const shapesReducer = (state=initialState, action) => {
     switch(action.type) {
         case ActionTypes.CIRCLE.ADD:
-            state = state.update('circles', (circles) => circles.set(action.payload.key,
-                Map({
-                    cx: action.payload.cx,
-                    cy: action.payload.cy,
-                })
-            ));
+            const newCircleKey = state.get('lastCircleKey') + 1;
+            state =
+                state.update('circles', (circles) => circles.set(newCircleKey,
+                    Map({
+                        cx: action.payload.cx,
+                        cy: action.payload.cy,
+                    })
+                )).set('lastCircleKey', newCircleKey);
             return state;
         case ActionTypes.ARROW.ADD:
-            state = state.update('arrows', (arrows) => arrows.set(action.payload.key,
-                Map({
-                    source: action.payload.source,
-                    target: action.payload.target,
-                    is_directed: action.payload.is_directed
-                })
-            ));
+            state =
+                state.update('arrows', (arrows) => arrows.push(
+                    Map({
+                        source: action.payload.source,
+                        target: action.payload.target,
+                        is_directed: action.payload.is_directed
+                    })
+                ));
             return state;
         case ActionTypes.BOX.ADD:
-            state = state.update('boxes', (boxes) => boxes.set(action.payload.key,
-                Map({
-                    cx: action.payload.cx,
-                    cy: action.payload.cy
-                })
-            ));
+            const newBoxKey = state.get('lastBoxKey') + 1;
+            state =
+                state.update('boxes', (boxes) => boxes.set(newBoxKey,
+                    Map({
+                        cx: action.payload.cx,
+                        cy: action.payload.cy
+                    })
+                )).set('lastBoxKey', newBoxKey);
             return state;
         case ActionTypes.CLEAR:
             return initialState;
