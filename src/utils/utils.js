@@ -7,3 +7,4 @@ export const listenFor = (commands) => (transcript, resetTranscript) => {
         }
     }
 };
+

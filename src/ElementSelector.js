@@ -1,6 +1,12 @@
+// external
 import React, { Component } from 'react';
+import { connect } from 'immutable';
+// style
 import './ElementSelector.css';
-import * as utils from './utils';
+// other
+import * as utils from './utils/utils';
+import * as modeActions from './actions/modeActions';
+
 
 class ElementSelector extends Component {
 
@@ -24,7 +30,7 @@ class ElementSelector extends Component {
     }
 
     _getClass(selection) {
-        return this.props.selection == selection ? 'selected' : '';
+        return this.props.selection === selection ? 'selected' : '';
     }
 
     componentWillReceiveProps(nextProps) {
@@ -61,8 +67,14 @@ class ElementSelector extends Component {
 }
 
 ElementSelector.propTypes = {
-    setSelection: React.PropTypes.func.isRequired,
-    selection: React.PropTypes.string
 };
 
-export default ElementSelector;
+const mapStateToProps = (state) => ({
+    selection: state.modeReducer.get('selection')
+});
+
+const mapDispatchToProps = (dispatch) => ({
+    setSelection: (selection) => dispatch(modeActions.setSelection(selection))
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(ElementSelector);

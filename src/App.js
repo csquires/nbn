@@ -9,14 +9,7 @@ class App extends Component {
 
     constructor(props) {
         super(props);
-        this.state = {
-            selection: null
-        };
         this._setSelection = this._setSelection.bind(this);
-    }
-
-    _setSelection(selection) {
-        this.setState({selection: selection})
     }
 
     render() {
@@ -28,13 +21,10 @@ class App extends Component {
                     <h2>Nothing But Net</h2>
                 </div>
                 <Touch
-                    selection={this.state.selection}
                     transcript={this.props.transcript}
                     resetTranscript={this.props.resetTranscript}
                 />
                 <ElementSelector
-                    selection={this.state.selection}
-                    setSelection={this._setSelection}
                     transcript={this.props.transcript}
                     resetTranscript={this.props.resetTranscript}
                 />

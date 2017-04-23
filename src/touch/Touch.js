@@ -3,7 +3,7 @@ import './Touch.css';
 import Canvas from '../Canvas';
 import _ from 'lodash';
 import { Map } from 'immutable';
-import * as utils from '../utils';
+import * as utils from '../utils/utils';
 
 // const mapTouches = (touches, f) => {
 //     const numTouches = touches.length;
@@ -29,10 +29,10 @@ class Touch extends Component {
         this.state = {
             ongoingTouchMap: Map(),
             lastTouchKey: 0,
-            currentCircleKey: 0,
-            currentArrowKey: 0,
-            currentBoxKey: 0,
-            isMouseDown: false
+            // currentCircleKey: 0,
+            // currentArrowKey: 0,
+            // currentBoxKey: 0,
+            // isMouseDown: false
         };
         this._handleTouchStart = this._handleTouchStart.bind(this);
         this._handleTouchMove = this._handleTouchMove.bind(this);
@@ -119,40 +119,40 @@ class Touch extends Component {
         }
     }
     _handleMouseMove(e) {
-        const mouseX = e.pageX;
-        const mouseY = e.pageY;
-        if (this.state.isMouseDown) {
-            e.preventDefault();
-            switch(this.props.selection) {
-                case 'circle':
-                    this.canvas.updateCircle(this.state.currentCircleKey, mouseX, mouseY);
-                    break;
-                case 'arrow':
-                    this.canvas.updateArrow(this.state.currentArrowKey, mouseX, mouseY);
-                    break;
-                case 'box':
-                    this.canvas.updateBox(this.state.currentBoxKey, mouseX, mouseY);
-                    break;
-                default:
-                    break;
-            }
-        }
+        // const mouseX = e.pageX;
+        // const mouseY = e.pageY;
+        // if (this.state.isMouseDown) {
+        //     e.preventDefault();
+        //     switch(this.props.selection) {
+        //         case 'circle':
+        //             this.canvas.updateCircle(this.state.currentCircleKey, mouseX, mouseY);
+        //             break;
+        //         case 'arrow':
+        //             this.canvas.updateArrow(this.state.currentArrowKey, mouseX, mouseY);
+        //             break;
+        //         case 'box':
+        //             this.canvas.updateBox(this.state.currentBoxKey, mouseX, mouseY);
+        //             break;
+        //         default:
+        //             break;
+        //     }
+        // }
     }
     _handleMouseUp(e) {
-        this.setState({isMouseDown: false});
-        switch(this.props.selection) {
-            case 'circle':
-                this.setState({currentCircleKey: this.state.currentCircleKey + 1});
-                break;
-            case 'arrow':
-                this.setState({currentArrowKey: this.state.currentArrowKey + 1});
-                break;
-            case 'box':
-                this.setState({currentBoxKey: this.state.currentBoxKey + 1});
-                break;
-            default:
-                break;
-        }
+        // this.setState({isMouseDown: false});
+        // switch(this.props.selection) {
+        //     case 'circle':
+        //         this.setState({currentCircleKey: this.state.currentCircleKey + 1});
+        //         break;
+        //     case 'arrow':
+        //         this.setState({currentArrowKey: this.state.currentArrowKey + 1});
+        //         break;
+        //     case 'box':
+        //         this.setState({currentBoxKey: this.state.currentBoxKey + 1});
+        //         break;
+        //     default:
+        //         break;
+        // }
     }
 
     // helper
