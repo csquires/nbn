@@ -14,11 +14,26 @@
   color: white;
 }
 
+.App-header.listening {
+  animation: App-header-pulse infinite 1s linear;
+  font-size: large;
+}
+
 .App-intro {
   font-size: large;
+}
+
+.dropzone-rejected {
+  color: red;
 }
 
 @keyframes App-logo-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+@keyframes App-header-pulse {
+  0% { background-color: black }
+  50% { background-color: blue }
+  100% { background-color: black }
 }

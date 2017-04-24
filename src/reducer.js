@@ -2,7 +2,7 @@
 import {combineReducers} from 'redux';
 import {reducer as notifications} from 'react-notification-system-redux';
 // my reducers
-import shapesReducer from './reducers/shapesReducer';
+import shapesReducer from './reducers/networkReducer';
 import modeReducer from './reducers/modeReducer';
 import commandReducer from './reducers/commandReducer';
 

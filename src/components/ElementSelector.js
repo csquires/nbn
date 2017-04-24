@@ -15,16 +15,16 @@ class ElementSelector extends Component {
         this.listenFor =
             utils.listenFor([
                 {
-                    command: 'select circle',
-                    action: () => this.props.setSelection('circle')
+                    command: 'select node',
+                    action: () => this.props.setSelection('node')
                 },
                 {
-                    command: 'select arrow',
-                    action: () => this.props.setSelection('arrow')
+                    command: 'select connection',
+                    action: () => this.props.setSelection('connection')
                 },
                 {
-                    command: 'select box',
-                    action: () => this.props.setSelection('box')
+                    command: 'select interaction',
+                    action: () => this.props.setSelection('interaction')
                 }
             ]);
     }
@@ -42,23 +42,23 @@ class ElementSelector extends Component {
             <div className="selector-container">
                 <h3>Elements</h3>
                 <ul className='selector-list'>
-                    <li onClick={() => this.props.setSelection('circle')} className={this._getClass('circle')}>
+                    <li onClick={() => this.props.setSelection('node')} className={this._getClass('node')}>
                         <svg viewBox='0 0 100 100'>
-                            <circle cx={50} cy={50} r={50} className='circle-selector'/>
+                            <circle cx={50} cy={50} r={50} className='node-selector'/>
                         </svg>
-                        <p>Circle</p>
+                        <p>Node</p>
                     </li>
-                    <li onClick={() => this.props.setSelection('arrow')} className={this._getClass('arrow')}>
+                    <li onClick={() => this.props.setSelection('connection')} className={this._getClass('connection')}>
                         <svg viewBox='0 0 100 100'>
-                            <line x1={0} y1={0} x2={100} y2={100} className='arrow-selector' />
+                            <line x1={0} y1={0} x2={100} y2={100} className='connection-selector' />
                         </svg>
-                        <p>Arrow</p>
+                        <p>Connection</p>
                     </li>
-                    <li onClick={() => this.props.setSelection('box')} className={this._getClass('box')}>
+                    <li onClick={() => this.props.setSelection('interaction')} className={this._getClass('interaction')}>
                         <svg viewBox='0 0 100 100'>
-                            <rect x={10} y={10} width={80} height={80} className='box-selector'/>
+                            <rect x={10} y={10} width={80} height={80} className='interaction-selector'/>
                         </svg>
-                        <p>Box</p>
+                        <p>Interaction</p>
                     </li>
                 </ul>
             </div>

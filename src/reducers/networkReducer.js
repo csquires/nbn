@@ -1,15 +1,15 @@
-import { Map, List, Set } from 'immutable';
+import Immutable, { Map, List, Set } from 'immutable';
 import ActionTypes from '../utils/ActionTypes';
 import * as networkAnalysis from '../utils/networkAnalysis';
 
 const initialState = Map({
     past: List([]),
     present: Map({
-        circles: Map({}),
+        nodes: Map({}),
         connections: Set(),
-        boxes: Map({}),
-        last_circle_key: 0,
-        last_box_key: 0,
+        interactions: Map({}),
+        last_node_key: 0,
+        last_interaction_key: 0,
         num_selected: 0,
         statistics: Map({
             max_centrality: null,
@@ -40,10 +40,10 @@ const timeReducer = (overallState=initialState, action) => {
 };
 
 const isSelected = (shape) => shape.get('selected');
-const connectedToSelected = (connection, circles) => {
+const connectedToSelected = (connection, nodes) => {
     const sourceKey = connection.get('source');
     const targetKey = connection.get('target');
-    return circles.getIn([sourceKey, 'selected']) || circles.getIn([targetKey, 'selected']);
+    return nodes.getIn([sourceKey, 'selected']) || nodes.getIn([targetKey, 'selected']);
 };
 export const getKeyPairs = (map) => {
     const [...keys] = map.keys();
@@ -60,15 +60,15 @@ const deselect = (shape) => shape.set('selected', false);
 
 const stateReducer = (state, action) => {
     switch(action.type) {
-        case ActionTypes.CIRCLE.ADD:
-            const newCircleKey = state.get('last_circle_key') + 1;
+        case ActionTypes.NODE.ADD:
+            const newNodeKey = state.get('last_node_key') + 1;
             state =
-                state.update('circles', (circles) => circles.set(newCircleKey,
+                state.update('nodes', (nodes) => nodes.set(newNodeKey,
                     Map({
                         cx: action.payload.cx,
                         cy: action.payload.cy,
                     })
-                )).set('last_circle_key', newCircleKey);
+                )).set('last_node_key', newNodeKey);
             return state;
         case ActionTypes.CONNECTION.ADD:
             state =
@@ -80,45 +80,45 @@ const stateReducer = (state, action) => {
                     })
                 ));
             return state;
-        case ActionTypes.BOX.ADD:
-            const newBoxKey = state.get('last_box_key') + 1;
+        case ActionTypes.INTERACTION.ADD:
+            const newInteractionKey = state.get('last_interaction_key') + 1;
             state =
-                state.update('boxes', (boxes) => boxes.set(newBoxKey,
+                state.update('interactions', (interactions) => interactions.set(newInteractionKey,
                     Map({
                         cx: action.payload.cx,
                         cy: action.payload.cy
                     })
-                )).set('last_box_key', newBoxKey);
+                )).set('last_interaction_key', newInteractionKey);
             return state;
 
         // COMMANDS
-        case ActionTypes.SHAPES.CHANGE_SELECTION:
+        case ActionTypes.NETWORK.CHANGE_SELECTION:
             const shape = action.payload.shape;
             const key = action.payload.key;
             const path = (() => {
                 switch (shape) {
-                    case 'circle': return ['circles', key, 'selected'];
-                    case 'box': return ['boxes', key, 'selected'];
+                    case 'node': return ['nodes', key, 'selected'];
+                    case 'interaction': return ['interactions', key, 'selected'];
                 }
             })();
             const selectionStatus = state.getIn(path);
             state = state.setIn(path, !selectionStatus);
             state = state.update('num_selected', (numSelected) => selectionStatus ? numSelected-1: numSelected+1);
             return state;
-        case ActionTypes.SHAPES.DELETE_SELECTED:
-            const numSelectedCircles = state.get('circles').filter(isSelected).size;
-            const numSelectedBoxes = state.get('boxes').filter(isSelected).size;
+        case ActionTypes.NETWORK.DELETE_SELECTED:
+            const numSelectedNodes = state.get('nodes').filter(isSelected).size;
+            const numSelectedInteractions = state.get('interactions').filter(isSelected).size;
             state = state
-                .update('circles', (circles) => circles.filterNot(isSelected))
-                .update('boxes', (boxes) => boxes.filterNot(isSelected))
+                .update('nodes', (nodes) => nodes.filterNot(isSelected))
+                .update('interactions', (interactions) => interactions.filterNot(isSelected))
                 .update('connections', (connections) =>
-                    connections.filterNot(connection => connectedToSelected(connection, state.get('circles')))
+                    connections.filterNot(connection => connectedToSelected(connection, state.get('nodes')))
                 );
-            state = state.update('num_selected', (numSelected) => numSelected - numSelectedBoxes - numSelectedCircles);
+            state = state.update('num_selected', (numSelected) => numSelected - numSelectedInteractions - numSelectedNodes);
             return state;
-        case ActionTypes.SHAPES.CONNECT_SELECTED:
-            const selectedCircles = state.get('circles').filter(isSelected);
-            const keyPairs = getKeyPairs(selectedCircles);
+        case ActionTypes.NETWORK.CONNECT_SELECTED:
+            const selectedNodes = state.get('nodes').filter(isSelected);
+            const keyPairs = getKeyPairs(selectedNodes);
             keyPairs.forEach(([source, target]) => {
                 state = state
                     .update('connections', (connections) => connections.add(
@@ -130,21 +130,30 @@ const stateReducer = (state, action) => {
                     ))
             });
             return state;
-        case ActionTypes.SHAPES.SELECT_ALL:
-            state = state.update('circles', (circles) => circles.map(select));
-            state = state.set('num_selected', state.get('circles').size);
+        case ActionTypes.NETWORK.SELECT_ALL:
+            state = state.update('nodes', (nodes) => nodes.map(select));
+            state = state.set('num_selected', state.get('nodes').size);
             return state;
-        case ActionTypes.SHAPES.DESELECT_ALL:
-            state = state.update('circles', (circles) => circles.map(deselect));
+        case ActionTypes.NETWORK.DESELECT_ALL:
+            state = state.update('nodes', (nodes) => nodes.map(deselect));
             state = state.set('num_selected', 0);
             return state;
         case ActionTypes.NETWORK.COMPUTE_CENTRALITIES:
             const connections = state.get('connections');
-            state = state.update('circles', (circles) => networkAnalysis.computeBetweennessCentralities(circles, connections));
-            const orderedCentralites = state.get('circles').map((circle) => circle.get('centrality')).sort();
-            state = state.setIn(['statistics', 'max_centrality'], orderedCentralites.last());
-            state = state.setIn(['statistics', 'min_centrality'], orderedCentralites.first());
+            state = state.update('nodes', (nodes) => networkAnalysis.computeBetweennessCentralities(nodes, connections));
+            const orderedCentralities = state.get('nodes').map((node) => node.get('centrality')).sort();
+            state = state.setIn(['statistics', 'max_centrality'], orderedCentralities.last());
+            state = state.setIn(['statistics', 'min_centrality'], orderedCentralities.first());
             return state;
+        case ActionTypes.NETWORK.SET: {
+            const networkJson = action.payload.network_json;
+            let network = Immutable.fromJS(networkJson);
+            const num2str = (num) => `${num}`;
+            const keysToStrings = (connection) => connection.update('source', num2str).update('target', num2str);
+            network = network.update('connections', (connections) => connections.map(keysToStrings).toSet());
+            state = network;
+            return state;
+        }
         case ActionTypes.CLEAR:
             return initialState;
         default:

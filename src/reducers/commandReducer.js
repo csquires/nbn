@@ -1,6 +1,7 @@
 import ActionTypes from '../utils/ActionTypes';
 import Immutable, { Map } from 'immutable';
-import * as shapeActions from '../actions/shapeActions';
+import * as shapeActions from '../actions/networkActions';
+import * as modeActions from '../actions/modeActions';
 
 const hintSettingsDefault = {
     should_show: true,
@@ -51,6 +52,16 @@ const initialState = Immutable.fromJS({
             settings: hintSettingsDefault,
             title: 'Compute centralities',
             ...getCommandConfig({key: 't', command: 'compute centralities', result: 'compute centralities'})
+        },
+        open_upload: {
+            settings: hintSettingsDefault,
+            title: 'Upload a file',
+            ...getCommandConfig({key: 'p', command: 'upload', result: 'upload a file'})
+        },
+        download_network: {
+            settings: hintSettingsDefault,
+            title: 'Download your network',
+            ...getCommandConfig({key: 'l', command: 'download', result: 'download your network'})
         }
     }
 });
@@ -61,7 +72,9 @@ export const commandMap = Map({
     undo: shapeActions.undo,
     deselect: shapeActions.deselectAll,
     select: shapeActions.selectAll,
-    compute_centralities: shapeActions.computeCentralities
+    compute_centralities: shapeActions.computeCentralities,
+    open_upload: () => modeActions.openModal('file_upload'),
+    download_network: modeActions.downloadNetwork
 });
 
 const commandReducer = (state=initialState, action) => {

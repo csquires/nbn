@@ -1,4 +1,4 @@
-import { getKeyPairs } from '../reducers/shapesReducer';
+import { getKeyPairs } from '../reducers/networkReducer';
 import { Map } from 'immutable';
 
 const testMap = Map({

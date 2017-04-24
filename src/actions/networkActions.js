@@ -2,9 +2,9 @@
 import ActionTypes from '../utils/ActionTypes';
 
 
-export const addCircle = (cx, cy) => {
+export const addNode = (cx, cy) => {
     return {
-        type: ActionTypes.CIRCLE.ADD,
+        type: ActionTypes.NODE.ADD,
         payload: {
             cx: cx,
             cy: cy
@@ -23,9 +23,9 @@ export const addConnection = (source, target, isDirected=false) => {
     }
 };
 
-export const addBox = (cx, cy) => {
+export const addInteraction = (cx, cy) => {
     return {
-        type: ActionTypes.BOX.ADD,
+        type: ActionTypes.INTERACTION.ADD,
         payload: {
             cx: cx,
             cy: cy
@@ -41,7 +41,7 @@ export const undo = () => {
 
 export const changeShapeSelection = ({shape, key}) => {
     return {
-        type: ActionTypes.SHAPES.CHANGE_SELECTION,
+        type: ActionTypes.NETWORK.CHANGE_SELECTION,
         payload: {
             shape: shape,
             key: key
@@ -51,30 +51,39 @@ export const changeShapeSelection = ({shape, key}) => {
 
 export const deleteSelectedShapes = () => {
     return {
-        type: ActionTypes.SHAPES.DELETE_SELECTED,
+        type: ActionTypes.NETWORK.DELETE_SELECTED,
     }
 };
 
 export const connectSelected = () => {
     return {
-        type: ActionTypes.SHAPES.CONNECT_SELECTED,
+        type: ActionTypes.NETWORK.CONNECT_SELECTED,
     }
 };
 
 export const selectAll = () => {
     return {
-        type: ActionTypes.SHAPES.SELECT_ALL
+        type: ActionTypes.NETWORK.SELECT_ALL
     }
 };
 
 export const deselectAll = () => {
     return {
-        type: ActionTypes.SHAPES.DESELECT_ALL
+        type: ActionTypes.NETWORK.DESELECT_ALL
     }
 };
 
 export const computeCentralities = () => {
     return {
         type: ActionTypes.NETWORK.COMPUTE_CENTRALITIES
+    }
+};
+
+export const setNetwork = (networkJson) => {
+    return {
+        type: ActionTypes.NETWORK.SET,
+        payload: {
+            network_json: networkJson
+        }
     }
 };

@@ -28,16 +28,16 @@
     height: 100px;
 }
 
-.circle-selector {
+.node-selector {
     fill: none;
     stroke: black;
 }
 
-.arrow-selector {
+.connection-selector {
     stroke: black;
 }
 
-.box-selector {
+.interaction-selector {
     stroke: black;
     fill: none;
 }

@@ -5,7 +5,7 @@ import _ from 'lodash';
 // style
 import '../styles/Canvas.css';
 // other
-import * as shapeActions from '../actions/shapeActions';
+import * as shapeActions from '../actions/networkActions';
 
 const SVG_WIDTH = 1000;
 const SVG_HEIGHT = 600;
@@ -28,11 +28,11 @@ const eachTouch = (touches, f) => {
     });
 };
 const dist = (x1, y1, x2, y2) => Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
-const inCircle = (canvasX, canvasY, circle) =>
-    dist(canvasX, canvasY, circle.get('cx'), circle.get('cy')) <= CIRCLE_RADIUS;
-const inBox = (canvasX, canvasY, box) =>
-    Math.abs(canvasX - box.get('cx')) <= BOX_WIDTH/2 &&
-        Math.abs(canvasY - box.get('cy')) <= BOX_HEIGHT/2;
+const inNodeCircle = (canvasX, canvasY, node) =>
+    dist(canvasX, canvasY, node.get('cx'), node.get('cy')) <= CIRCLE_RADIUS;
+const inInteractionBox = (canvasX, canvasY, interaction) =>
+    Math.abs(canvasX - interaction.get('cx')) <= BOX_WIDTH/2 &&
+        Math.abs(canvasY - interaction.get('cy')) <= BOX_HEIGHT/2;
 const getClass = (selectionStatus) => selectionStatus ? 'selected' : '';
 const getColor = (decimal) => {
     if (typeof decimal === 'undefined') return '';
@@ -103,10 +103,10 @@ class Canvas extends Component {
         ]
     };
     _checkIntersection(canvasX, canvasY) {
-        const intersectedCircleKey = this.props.circles.findKey((circle) => inCircle(canvasX, canvasY, circle));
-        if (intersectedCircleKey) return {shape: 'circle', key: intersectedCircleKey};
-        const intersectedBoxKey = this.props.boxes.findKey((box) => inBox(canvasX, canvasY, box));
-        if (intersectedBoxKey) return {shape: 'box', key: intersectedBoxKey};
+        const intersectedNodeKey = this.props.nodes.findKey((node) => inNodeCircle(canvasX, canvasY, node));
+        if (intersectedNodeKey) return {shape: 'node', key: intersectedNodeKey};
+        const intersectedInteractionKey = this.props.interactions.findKey((interaction) => inInteractionBox(canvasX, canvasY, interaction));
+        if (intersectedInteractionKey) return {shape: 'interaction', key: intersectedInteractionKey};
         return false;
     }
 
@@ -121,14 +121,14 @@ class Canvas extends Component {
                 this.props.changeShapeSelection(maybeIntersection);
             } else {
                 switch(this.props.selection) {
-                    case 'circle':
-                        this.props.addCircle(canvasX, canvasY);
+                    case 'node':
+                        this.props.addNode(canvasX, canvasY);
                         break;
-                    case 'arrow':
+                    case 'connection':
 
                         break;
-                    case 'box':
-                        this.props.addBox(canvasX, canvasY);
+                    case 'interaction':
+                        this.props.addInteraction(canvasX, canvasY);
                         break;
                     default:
                         break;
@@ -161,14 +161,14 @@ class Canvas extends Component {
         }
         else {
             switch(this.props.selection) {
-                case 'circle':
-                    this.props.addCircle(canvasX, canvasY);
+                case 'node':
+                    this.props.addNode(canvasX, canvasY);
                     break;
-                case 'arrow':
+                case 'connection':
 
                     break;
-                case 'box':
-                    this.props.addBox(canvasX, canvasY);
+                case 'interaction':
+                    this.props.addInteraction(canvasX, canvasY);
                     break;
                 default:
                     break;
@@ -216,11 +216,11 @@ class Canvas extends Component {
         return (
             <svg className={`svg-canvas svg-canvas-${this.state.svgClass}`} ref={(c) => this.canvas = c} viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}>
                 {
-                    this.props.circles.map((circle) => {
-                        const cx = circle.get('cx');
-                        const cy = circle.get('cy');
-                        const selected = circle.get('selected');
-                        const centrality = circle.get('centrality');
+                    this.props.nodes.map((node) => {
+                        const cx = node.get('cx');
+                        const cy = node.get('cy');
+                        const selected = node.get('selected');
+                        const centrality = node.get('centrality');
                         const color = getColor(centrality);
                         return <circle cx={cx} cy={cy} r={CIRCLE_RADIUS} className={getClass(selected)} style={{fill: color}}/>;
                     })
@@ -231,10 +231,10 @@ class Canvas extends Component {
                         const targetKey = connection.get('target');
                         // const length = dist(x1, y1, x2, y2);
                         // const angle = Math.atan2(y2-y1, x2-x1);
-                        const x1 = this.props.circles.get(sourceKey).get('cx');
-                        const y1 = this.props.circles.get(sourceKey).get('cy');
-                        const x2 = this.props.circles.get(targetKey).get('cx');
-                        const y2 = this.props.circles.get(targetKey).get('cy');
+                        const x1 = this.props.nodes.get(sourceKey).get('cx');
+                        const y1 = this.props.nodes.get(sourceKey).get('cy');
+                        const x2 = this.props.nodes.get(targetKey).get('cx');
+                        const y2 = this.props.nodes.get(targetKey).get('cy');
                         // const leg1x = x2 - .2*length*Math.cos(angle-Math.PI/4);
                         // const leg1y = y2 - .2*length*Math.sin(angle-Math.PI/4);
                         // const leg2x = x2 - .2*length*Math.cos(angle+Math.PI/4);
@@ -247,10 +247,10 @@ class Canvas extends Component {
                     })
                 }
                 {
-                    this.props.boxes.map((box) => {
-                        const x = box.get('cx') - BOX_WIDTH/2;
-                        const y = box.get('cy') - BOX_HEIGHT/2;
-                        const selected = box.get('selected');
+                    this.props.interactions.map((interaction) => {
+                        const x = interaction.get('cx') - BOX_WIDTH/2;
+                        const y = interaction.get('cy') - BOX_HEIGHT/2;
+                        const selected = interaction.get('selected');
                         return <rect x={x} y={y} width={BOX_WIDTH} height={BOX_HEIGHT} className={getClass(selected)}/>;
                     })
                 }
@@ -266,9 +266,9 @@ Canvas.propTypes = {
 const mapStateToProps = (state) => {
     const currentShapes = state.shapes.get('present');
     return {
-        circles: currentShapes.get('circles'),
+        nodes: currentShapes.get('nodes'),
         connections: currentShapes.get('connections'),
-        boxes: currentShapes.get('boxes'),
+        interactions: currentShapes.get('interactions'),
         maxCentrality: currentShapes.get('max_centrality'),
         minCentrality: currentShapes.get('min_centrality'),
         selection: state.modeReducer.get('selection'),
@@ -276,8 +276,8 @@ const mapStateToProps = (state) => {
 };
 
 const mapDispatchToProps = (dispatch) => ({
-    addBox: (cx, cy) => dispatch(shapeActions.addBox(cx, cy)),
-    addCircle: (cx, cy) => dispatch(shapeActions.addCircle(cx, cy)),
+    addInteraction: (cx, cy) => dispatch(shapeActions.addInteraction(cx, cy)),
+    addNode: (cx, cy) => dispatch(shapeActions.addNode(cx, cy)),
     addConnection: (source, target) => dispatch(shapeActions.addConnection(source, target)),
     changeShapeSelection: ({shape, key}) => dispatch(shapeActions.changeShapeSelection({shape, key})),
     deleteSelectedShapes: () => dispatch(shapeActions.deleteSelectedShapes()),
