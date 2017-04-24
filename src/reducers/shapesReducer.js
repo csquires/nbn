@@ -1,15 +1,20 @@
-import { Map, List } from 'immutable';
+import { Map, List, Set } from 'immutable';
 import ActionTypes from '../utils/ActionTypes';
+import * as networkAnalysis from '../utils/networkAnalysis';
 
 const initialState = Map({
     past: List([]),
     present: Map({
         circles: Map({}),
-        arrows: List([]),
+        connections: Set(),
         boxes: Map({}),
         last_circle_key: 0,
         last_box_key: 0,
-        num_selected: 0
+        num_selected: 0,
+        statistics: Map({
+            max_centrality: null,
+            min_centrality: null
+        })
     }),
     future: List([])
 });
@@ -19,8 +24,6 @@ const timeReducer = (overallState=initialState, action) => {
     switch(action.type) {
         case ActionTypes.UNDO:
             const lastState = overallState.get('past').get(-1);
-            console.log('last state', lastState);
-            console.log('current state', currentState);
             return overallState
                 .update('past', (past) => past.pop())
                 .set('present', lastState)
@@ -36,6 +39,25 @@ const timeReducer = (overallState=initialState, action) => {
     }
 };
 
+const isSelected = (shape) => shape.get('selected');
+const connectedToSelected = (connection, circles) => {
+    const sourceKey = connection.get('source');
+    const targetKey = connection.get('target');
+    return circles.getIn([sourceKey, 'selected']) || circles.getIn([targetKey, 'selected']);
+};
+export const getKeyPairs = (map) => {
+    const [...keys] = map.keys();
+    let keyPairs = List([]);
+    keys.forEach((key, index) => {
+        const prevKeys = keys.slice(0, index);
+        const pairs = prevKeys.map((prevKey) => List([prevKey, key]));
+        keyPairs = keyPairs.concat(pairs);
+    });
+    return keyPairs;
+};
+const select = (shape) => shape.set('selected', true);
+const deselect = (shape) => shape.set('selected', false);
+
 const stateReducer = (state, action) => {
     switch(action.type) {
         case ActionTypes.CIRCLE.ADD:
@@ -48,9 +70,9 @@ const stateReducer = (state, action) => {
                     })
                 )).set('last_circle_key', newCircleKey);
             return state;
-        case ActionTypes.ARROW.ADD:
+        case ActionTypes.CONNECTION.ADD:
             state =
-                state.update('arrows', (arrows) => arrows.push(
+                state.update('connections', (connections) => connections.add(
                     Map({
                         source: action.payload.source,
                         target: action.payload.target,
@@ -68,6 +90,8 @@ const stateReducer = (state, action) => {
                     })
                 )).set('last_box_key', newBoxKey);
             return state;
+
+        // COMMANDS
         case ActionTypes.SHAPES.CHANGE_SELECTION:
             const shape = action.payload.shape;
             const key = action.payload.key;
@@ -82,13 +106,44 @@ const stateReducer = (state, action) => {
             state = state.update('num_selected', (numSelected) => selectionStatus ? numSelected-1: numSelected+1);
             return state;
         case ActionTypes.SHAPES.DELETE_SELECTED:
-            const isSelected = (shape) => shape.get('selected');
             const numSelectedCircles = state.get('circles').filter(isSelected).size;
             const numSelectedBoxes = state.get('boxes').filter(isSelected).size;
             state = state
                 .update('circles', (circles) => circles.filterNot(isSelected))
-                .update('boxes', (boxes) => boxes.filterNot(isSelected));
+                .update('boxes', (boxes) => boxes.filterNot(isSelected))
+                .update('connections', (connections) =>
+                    connections.filterNot(connection => connectedToSelected(connection, state.get('circles')))
+                );
             state = state.update('num_selected', (numSelected) => numSelected - numSelectedBoxes - numSelectedCircles);
+            return state;
+        case ActionTypes.SHAPES.CONNECT_SELECTED:
+            const selectedCircles = state.get('circles').filter(isSelected);
+            const keyPairs = getKeyPairs(selectedCircles);
+            keyPairs.forEach(([source, target]) => {
+                state = state
+                    .update('connections', (connections) => connections.add(
+                        Map({
+                            source: source,
+                            target: target,
+                            is_directed: false
+                        })
+                    ))
+            });
+            return state;
+        case ActionTypes.SHAPES.SELECT_ALL:
+            state = state.update('circles', (circles) => circles.map(select));
+            state = state.set('num_selected', state.get('circles').size);
+            return state;
+        case ActionTypes.SHAPES.DESELECT_ALL:
+            state = state.update('circles', (circles) => circles.map(deselect));
+            state = state.set('num_selected', 0);
+            return state;
+        case ActionTypes.NETWORK.COMPUTE_CENTRALITIES:
+            const connections = state.get('connections');
+            state = state.update('circles', (circles) => networkAnalysis.computeBetweennessCentralities(circles, connections));
+            const orderedCentralites = state.get('circles').map((circle) => circle.get('centrality')).sort();
+            state = state.setIn(['statistics', 'max_centrality'], orderedCentralites.last());
+            state = state.setIn(['statistics', 'min_centrality'], orderedCentralites.first());
             return state;
         case ActionTypes.CLEAR:
             return initialState;

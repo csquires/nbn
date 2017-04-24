@@ -12,7 +12,8 @@ import './styles/App.css';
 // other
 import * as utils from './utils/utils';
 import * as shapeActions from './actions/shapeActions';
-
+import { commandMap } from './reducers/commandReducer';
+import * as notificationActions from './actions/notificationActions';
 
 class App extends Component {
 
@@ -24,11 +25,31 @@ class App extends Component {
                     command: 'undo',
                     action: this.props.undo
                 }
-            ])
+            ]);
+        this._handleKeyPress = this._handleKeyPress.bind(this);
+    }
+
+    componentDidMount() {
+        window.addEventListener('keypress', this._handleKeyPress);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('keypress');
     }
 
     componentWillReceiveProps(nextProps) {
+        if (nextProps.numSelected > 1) {
+            this.props.showHint('connect');
+        }
         this.listenFor(nextProps);
+    }
+
+    _handleKeyPress(e) {
+        const matchingCommandKey = this.props.commands.findKey((command) => command.get('key') === e.key);
+        if (matchingCommandKey) {
+            const command = this.props.commandMap.get(matchingCommandKey);
+            command();
+        }
     }
 
     render() {
@@ -59,11 +80,15 @@ class App extends Component {
 }
 
 const mapStateToProps = (state) => ({
-    notifications: state.notifications
+    notifications: state.notifications,
+    commands: state.commandReducer.get('commands'),
+    numSelected: state.shapes.getIn(['present', 'num_selected'])
 });
 
 const mapDispatchToProps = (dispatch) => ({
-    undo: () => dispatch(shapeActions.undo())
+    undo: () => dispatch(shapeActions.undo()),
+    commandMap: commandMap.map((action) => () => dispatch(action())),
+    showHint: (hintName) => dispatch(notificationActions.showHint(hintName))
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(SpeechRecognition(App));

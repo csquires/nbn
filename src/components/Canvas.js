@@ -6,7 +6,6 @@ import _ from 'lodash';
 import '../styles/Canvas.css';
 // other
 import * as shapeActions from '../actions/shapeActions';
-import * as notificationActions from '../actions/notificationActions';
 
 const SVG_WIDTH = 1000;
 const SVG_HEIGHT = 600;
@@ -35,6 +34,12 @@ const inBox = (canvasX, canvasY, box) =>
     Math.abs(canvasX - box.get('cx')) <= BOX_WIDTH/2 &&
         Math.abs(canvasY - box.get('cy')) <= BOX_HEIGHT/2;
 const getClass = (selectionStatus) => selectionStatus ? 'selected' : '';
+const getColor = (decimal) => {
+    if (typeof decimal === 'undefined') return '';
+    const red = Math.round(decimal*255);
+    const blue = Math.round((1-decimal)*255);
+    return `rgb(${red},0,${blue})`;
+};
 
 class Canvas extends Component {
 
@@ -48,7 +53,7 @@ class Canvas extends Component {
         this._toCanvasCoordinates = this._toCanvasCoordinates.bind(this);
         this._checkIntersection = this._checkIntersection.bind(this);
         // handlers
-        this._handleKeyPress = this._handleKeyPress.bind(this);
+
         this._handleMouseDown = this._handleMouseDown.bind(this);
         this._handleMouseMove = this._handleMouseMove.bind(this);
         this._handleMouseUp = this._handleMouseUp.bind(this);
@@ -61,7 +66,7 @@ class Canvas extends Component {
     componentDidMount() {
         this._updateSvgClass();
         window.addEventListener('resize', this._updateSvgClass);
-        window.addEventListener('keypress', this._handleKeyPress);
+
         this.canvas.addEventListener('touchstart', this._handleTouchStart);
         this.canvas.addEventListener('touchmove', this._handleTouchMove);
         this.canvas.addEventListener('touchend', this._handleTouchEnd);
@@ -103,16 +108,6 @@ class Canvas extends Component {
         const intersectedBoxKey = this.props.boxes.findKey((box) => inBox(canvasX, canvasY, box));
         if (intersectedBoxKey) return {shape: 'box', key: intersectedBoxKey};
         return false;
-    }
-
-    _handleKeyPress(e) {
-        // console.log('key press', e);
-        if (e.key === 'Delete') {
-            this.props.deleteSelectedShapes();
-        }
-        if (e.key === 'f') {
-            this.props.successNotification();
-        }
     }
 
     // touch events
@@ -225,30 +220,32 @@ class Canvas extends Component {
                         const cx = circle.get('cx');
                         const cy = circle.get('cy');
                         const selected = circle.get('selected');
-                        return <circle cx={cx} cy={cy} r={CIRCLE_RADIUS} className={getClass(selected)}/>;
+                        const centrality = circle.get('centrality');
+                        const color = getColor(centrality);
+                        return <circle cx={cx} cy={cy} r={CIRCLE_RADIUS} className={getClass(selected)} style={{fill: color}}/>;
                     })
                 }
-                {/*{*/}
-                    {/*this.props.arrows.map((line) => {*/}
-                        {/*const x1 = line.get('x1');*/}
-                        {/*const y1 = line.get('y1');*/}
-                        {/*const x2 = line.get('x2');*/}
-                        {/*const y2 = line.get('y2');*/}
-                        {/*const length = dist(x1, y1, x2, y2);*/}
-                        {/*const angle = Math.atan2(y2-y1, x2-x1);*/}
-                        {/*const leg1x = x2 - .2*length*Math.cos(angle-Math.PI/4);*/}
-                        {/*const leg1y = y2 - .2*length*Math.sin(angle-Math.PI/4);*/}
-                        {/*const leg2x = x2 - .2*length*Math.cos(angle+Math.PI/4);*/}
-                        {/*const leg2y = y2 - .2*length*Math.sin(angle+Math.PI/4);*/}
-                        {/*return (*/}
-                            {/*<path d={`*/}
-                                {/*M ${x1} ${y1} ${x2} ${y2}*/}
-                                {/*M ${x2} ${y2} ${leg1x} ${leg1y}*/}
-                                {/*M ${x2} ${y2} ${leg2x} ${leg2y}*/}
-                            {/*`} />*/}
-                        {/*);*/}
-                    {/*})*/}
-                {/*}*/}
+                {
+                    this.props.connections.map((connection) => {
+                        const sourceKey = connection.get('source');
+                        const targetKey = connection.get('target');
+                        // const length = dist(x1, y1, x2, y2);
+                        // const angle = Math.atan2(y2-y1, x2-x1);
+                        const x1 = this.props.circles.get(sourceKey).get('cx');
+                        const y1 = this.props.circles.get(sourceKey).get('cy');
+                        const x2 = this.props.circles.get(targetKey).get('cx');
+                        const y2 = this.props.circles.get(targetKey).get('cy');
+                        // const leg1x = x2 - .2*length*Math.cos(angle-Math.PI/4);
+                        // const leg1y = y2 - .2*length*Math.sin(angle-Math.PI/4);
+                        // const leg2x = x2 - .2*length*Math.cos(angle+Math.PI/4);
+                        // const leg2y = y2 - .2*length*Math.sin(angle+Math.PI/4);
+                        return (
+                            <path d={`
+                                M ${x1} ${y1} ${x2} ${y2}
+                            `} />
+                        );
+                    })
+                }
                 {
                     this.props.boxes.map((box) => {
                         const x = box.get('cx') - BOX_WIDTH/2;
@@ -266,22 +263,24 @@ class Canvas extends Component {
 Canvas.propTypes = {
 };
 
-const mapStateToProps = (state) => ({
-    circles: state.shapes.getIn(['present', 'circles']),
-    arrows: state.shapes.getIn(['present', 'arrows']),
-    boxes: state.shapes.getIn(['present', 'boxes']),
-    selection: state.modeReducer.get('selection'),
-    selectedCircles: state.shapes.getIn(['present', 'selected_circles']),
-    selectedBoxes: state.shapes.getIn(['present', 'selected_boxes']),
-});
+const mapStateToProps = (state) => {
+    const currentShapes = state.shapes.get('present');
+    return {
+        circles: currentShapes.get('circles'),
+        connections: currentShapes.get('connections'),
+        boxes: currentShapes.get('boxes'),
+        maxCentrality: currentShapes.get('max_centrality'),
+        minCentrality: currentShapes.get('min_centrality'),
+        selection: state.modeReducer.get('selection'),
+    }
+};
 
 const mapDispatchToProps = (dispatch) => ({
     addBox: (cx, cy) => dispatch(shapeActions.addBox(cx, cy)),
     addCircle: (cx, cy) => dispatch(shapeActions.addCircle(cx, cy)),
-    addArrow: (source, target) => dispatch(shapeActions.addArrow(source, target)),
+    addConnection: (source, target) => dispatch(shapeActions.addConnection(source, target)),
     changeShapeSelection: ({shape, key}) => dispatch(shapeActions.changeShapeSelection({shape, key})),
     deleteSelectedShapes: () => dispatch(shapeActions.deleteSelectedShapes()),
-    successNotification: () => dispatch(notificationActions.successNotification())
 });
 
 export default connect(mapStateToProps, mapDispatchToProps, null, {withRef: true})(Canvas);

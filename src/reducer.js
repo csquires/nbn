@@ -1,11 +1,16 @@
+// external
 import {combineReducers} from 'redux';
+import {reducer as notifications} from 'react-notification-system-redux';
+// my reducers
 import shapesReducer from './reducers/shapesReducer';
 import modeReducer from './reducers/modeReducer';
-import {reducer as notifications} from 'react-notification-system-redux';
+import commandReducer from './reducers/commandReducer';
+
 
 const reducer = combineReducers({
     shapes: shapesReducer,
     modeReducer: modeReducer,
+    commandReducer,
     notifications
 });
 

@@ -9,11 +9,11 @@ export const setSelection = (selection) => {
     }
 };
 
-export const setNotificationSettings = (notificationName, settings) => {
+export const setHintSettings = (commandName, settings) => {
     return {
-        type: ActionTypes.NOTIFICATION_SETTINGS.SET,
+        type: ActionTypes.HINT_SETTINGS.SET,
         payload: {
-            notification_name: notificationName,
+            command_name: commandName,
             settings: settings
         }
     }
