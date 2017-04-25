@@ -70,6 +70,13 @@ const stateReducer = (state, action) => {
                     })
                 )).set('last_node_key', newNodeKey);
             return state;
+        case ActionTypes.NODE.MOVE: {
+            const key = action.payload.key;
+            const cx = action.payload.cx;
+            const cy = action.payload.cy;
+            state = state.updateIn(['nodes', key], (node) => node.set('cx', cx).set('cy', cy));
+            return state;
+        }
         case ActionTypes.CONNECTION.ADD:
             state =
                 state.update('connections', (connections) => connections.add(

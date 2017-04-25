@@ -15,12 +15,8 @@
 }
 
 .App-header.listening {
-  animation: App-header-pulse infinite 1s linear;
+  animation: App-header-pulse infinite 2s linear;
   font-size: large;
-}
-
-.App-header.listening h2 {
-  display: none;
 }
 
 .App-intro {
@@ -42,7 +38,7 @@
   100% { background-color: black }
 }
 
-.command-table {
-  /*color: red;*/
+.command-table td {
+  cursor: pointer;
 }
 

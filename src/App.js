@@ -13,11 +13,12 @@ import ElementSelector from './components/ElementSelector';
 import logo from './logo.svg';
 import './styles/App.css';
 // other
-import * as utils from './utils/utils';
 import * as networkActions from './actions/networkActions';
 import { commandMap } from './reducers/commandReducer';
 import * as notificationActions from './actions/notificationActions';
 import * as modeActions from './actions/modeActions';
+import * as utils from './utils/utils';
+
 
 class App extends Component {
 
@@ -25,14 +26,8 @@ class App extends Component {
         super(props);
         this.state = {
             listening: false,
+            recognizedSpeech: null
         };
-        this.listenFor =
-            utils.listenFor([
-                {
-                    command: 'undo',
-                    action: this.props.undo
-                }
-            ]);
         this._handleKeyPress = this._handleKeyPress.bind(this);
         this._handleUploadedFile = this._handleUploadedFile.bind(this);
     }
@@ -57,16 +52,36 @@ class App extends Component {
     }
 
     componentWillReceiveProps(nextProps) {
+        const transcript = nextProps.transcript.toLowerCase();
         if (nextProps.numSelected > 1) {
             this.props.showHint('connect');
         }
-        console.log(nextProps.transcript);
-        if (nextProps.transcript.toLowerCase().includes('hey network builder')) {
+        if (utils.includesCloseMatch(transcript, 'yo alex')) {
             this.setState({listening: true});
-            setTimeout(() => this.setState({listening: false}), 2000);
+            setTimeout(() => this.setState({listening: false}), 10000);
             this.props.resetTranscript();
         }
+        if (this.state.listening) {
+            this.props.commands.forEach((command, commandKey) => {
+                const commandSpeech = command.get('command');
+                if (utils.includesCloseMatch(transcript, commandSpeech)) {
+                    const response = command.get('response');
+                    const action = this.props.commandMap.get(commandKey);
+                    action();
+                    this.props.resetTranscript();
+                    this.setState({listening: false, recognizedSpeech: commandSpeech});
+                    setTimeout(() => this.setState({recognizedSpeech: null}), 2000);
+                    if (response) this.speak(response);
+                }
+            })
+        }
         // this.listenFor(nextProps);
+    }
+
+    speak(response) {
+        const utterance = new SpeechSynthesisUtterance();
+        utterance.text = response;
+        window.speechSynthesis.speak(utterance);
     }
 
     _handleKeyPress(e) {
@@ -108,7 +123,7 @@ class App extends Component {
                 <div className={`App-header${this.state.listening ? ' listening' : ''}`}>
                     {
                         this.state.listening ?
-                            <h1>{this.props.transcript}</h1> :
+                            <h1>{this.state.recognizedSpeech ? this.state.recognizedSpeech : this.props.transcript}</h1> :
                             defaultBanner()
                     }
 

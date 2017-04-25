@@ -5,7 +5,7 @@ import _ from 'lodash';
 // style
 import '../styles/Canvas.css';
 // other
-import * as shapeActions from '../actions/networkActions';
+import * as networkActions from '../actions/networkActions';
 
 const SVG_WIDTH = 1000;
 const SVG_HEIGHT = 600;
@@ -47,6 +47,9 @@ class Canvas extends Component {
         super(props);
         this.state = {
             svgClass: 'tall',
+            isMouseDown: false,
+            mouseDownX: null,
+            mouseDownY: null
         };
         // helpers
         this._updateSvgClass = this._updateSvgClass.bind(this);
@@ -154,62 +157,57 @@ class Canvas extends Component {
     _handleMouseDown(e) {
         e.preventDefault();
         const [canvasX, canvasY] = this._toCanvasCoordinates(e.pageX, e.pageY);
-        const maybeIntersection = this._checkIntersection(canvasX, canvasY);
-        console.log('maybe intersection', maybeIntersection);
-        if (maybeIntersection) {
-            this.props.changeShapeSelection(maybeIntersection);
-        }
-        else {
-            switch(this.props.selection) {
-                case 'node':
-                    this.props.addNode(canvasX, canvasY);
-                    break;
-                case 'connection':
+        this.setState({
+            isMouseDown: true,
+            mouseDownX: canvasX,
+            mouseDownY: canvasY,
+            intersectedShape: this._checkIntersection(canvasX, canvasY)
+        });
+    }
+    _handleMouseMove(e) {
+        if (this.state.isMouseDown) {
+            e.preventDefault();
+            const [canvasX, canvasY] = this._toCanvasCoordinates(e.pageX, e.pageY);
+            if (this.state.intersectedShape) {
+                const { shape, key } = this.state.intersectedShape;
+                if (shape === 'node') {
+                    this.props.moveNode(key, canvasX, canvasY);
+                }
+                if (shape === 'interaction') {
 
-                    break;
-                case 'interaction':
-                    this.props.addInteraction(canvasX, canvasY);
-                    break;
-                default:
-                    break;
+                }
             }
         }
     }
-    _handleMouseMove(e) {
-        // const mouseX = e.pageX;
-        // const mouseY = e.pageY;
-        // if (this.state.isMouseDown) {
-        //     e.preventDefault();
-        //     switch(this.props.selection) {
-        //         case 'circle':
-        //             this.canvas.updateCircle(this.state.currentCircleKey, mouseX, mouseY);
-        //             break;
-        //         case 'arrow':
-        //             this.canvas.updateArrow(this.state.currentArrowKey, mouseX, mouseY);
-        //             break;
-        //         case 'box':
-        //             this.canvas.updateBox(this.state.currentBoxKey, mouseX, mouseY);
-        //             break;
-        //         default:
-        //             break;
-        //     }
-        // }
-    }
     _handleMouseUp(e) {
-        // this.setState({isMouseDown: false});
-        // switch(this.props.selection) {
-        //     case 'circle':
-        //         this.setState({currentCircleKey: this.state.currentCircleKey + 1});
-        //         break;
-        //     case 'arrow':
-        //         this.setState({currentArrowKey: this.state.currentArrowKey + 1});
-        //         break;
-        //     case 'box':
-        //         this.setState({currentBoxKey: this.state.currentBoxKey + 1});
-        //         break;
-        //     default:
-        //         break;
-        // }
+        e.preventDefault();
+        const [canvasX, canvasY] = this._toCanvasCoordinates(e.pageX, e.pageY);
+        if (canvasX === this.state.mouseDownX && canvasY === this.state.mouseDownY) {
+            const maybeIntersection = this._checkIntersection(canvasX, canvasY);
+            if (maybeIntersection) {
+                this.props.changeShapeSelection(maybeIntersection);
+            }
+            else {
+                switch(this.props.selection) {
+                    case 'node':
+                        this.props.addNode(canvasX, canvasY);
+                        break;
+                    case 'connection':
+
+                        break;
+                    case 'interaction':
+                        this.props.addInteraction(canvasX, canvasY);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        this.setState({
+            isMouseDown: false,
+            mouseDownX: null,
+            mouseDownY: null
+        })
     }
 
     render() {
@@ -276,11 +274,11 @@ const mapStateToProps = (state) => {
 };
 
 const mapDispatchToProps = (dispatch) => ({
-    addInteraction: (cx, cy) => dispatch(shapeActions.addInteraction(cx, cy)),
-    addNode: (cx, cy) => dispatch(shapeActions.addNode(cx, cy)),
-    addConnection: (source, target) => dispatch(shapeActions.addConnection(source, target)),
-    changeShapeSelection: ({shape, key}) => dispatch(shapeActions.changeShapeSelection({shape, key})),
-    deleteSelectedShapes: () => dispatch(shapeActions.deleteSelectedShapes()),
+    addInteraction: (cx, cy) => dispatch(networkActions.addInteraction(cx, cy)),
+    addNode: (cx, cy) => dispatch(networkActions.addNode(cx, cy)),
+    addConnection: (source, target) => dispatch(networkActions.addConnection(source, target)),
+    changeShapeSelection: ({shape, key}) => dispatch(networkActions.changeShapeSelection({shape, key})),
+    moveNode: (key, cx, cy) => dispatch(networkActions.moveNode(key, cx, cy))
 });
 
 export default connect(mapStateToProps, mapDispatchToProps, null, {withRef: true})(Canvas);

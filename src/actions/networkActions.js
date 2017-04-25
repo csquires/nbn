@@ -87,3 +87,14 @@ export const setNetwork = (networkJson) => {
         }
     }
 };
+
+export const moveNode = (key, cx, cy) => {
+    return {
+        type: ActionTypes.NODE.MOVE,
+        payload: {
+            key: key,
+            cx: cx,
+            cy: cy
+        }
+    }
+};
