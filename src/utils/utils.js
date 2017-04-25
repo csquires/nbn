@@ -18,8 +18,6 @@ const closeMatchMap = {
 export const includesCloseMatch = (transcript, speechToFind) => {
     if (transcript.includes(speechToFind)) return true;
     const matches = closeMatchMap[speechToFind];
-    matches && matches.forEach((match) => {
-        if (transcript.includes(match)) return true;
-    });
-    return false;
+    const someMatched = matches && matches.some((m) => transcript.includes(m));
+    return someMatched;
 };
