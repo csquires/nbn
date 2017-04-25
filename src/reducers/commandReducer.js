@@ -25,7 +25,7 @@ const initialState = Immutable.fromJS({
     commands: {
         connect: {
             hint_settings: hintSettingsDefault,
-            title: 'Connect Nodes',
+            title: 'Connect Selected Nodes',
             ...getCommandConfig({key: 'c', command: 'connect', result: 'connect nodes'})
         },
         delete_selected: {
@@ -40,23 +40,23 @@ const initialState = Immutable.fromJS({
         },
         select: {
             settings: hintSettingsDefault,
-            title: 'Select all',
+            title: 'Select all nodes',
             ...getCommandConfig({key: 's', command: 'select all', result: 'select all'})
         },
         deselect: {
             settings: hintSettingsDefault,
-            title: 'Clear selections',
+            title: 'Clear all selections',
             ...getCommandConfig({key: 'd', command: 'deselect all', result: 'deselect all'})
         },
         compute_centralities: {
             settings: hintSettingsDefault,
-            title: 'Compute centralities',
+            title: 'Compute node centralities',
             ...getCommandConfig({key: 't', command: 'compute centralities', result: 'compute centralities'})
         },
         open_upload: {
             settings: hintSettingsDefault,
-            title: 'Upload a file',
-            ...getCommandConfig({key: 'p', command: 'upload', result: 'upload a file'})
+            title: 'Upload a network',
+            ...getCommandConfig({key: 'p', command: 'upload', result: 'upload a network (file ending in .nbn.txt)'})
         },
         download_network: {
             settings: hintSettingsDefault,

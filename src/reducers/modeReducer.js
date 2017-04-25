@@ -2,7 +2,7 @@ import ActionTypes from '../utils/ActionTypes';
 import Immutable, { Map } from 'immutable';
 
 const initialState = Immutable.fromJS({
-    selection: null,
+    selection: 'node',
     modals: {
         file_upload: {
             is_open: false

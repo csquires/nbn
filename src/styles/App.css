@@ -19,6 +19,10 @@
   font-size: large;
 }
 
+.App-header.listening h2 {
+  display: none;
+}
+
 .App-intro {
   font-size: large;
 }
@@ -37,3 +41,8 @@
   50% { background-color: blue }
   100% { background-color: black }
 }
+
+.command-table {
+  /*color: red;*/
+}
+

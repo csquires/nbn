@@ -5,6 +5,7 @@ import SpeechRecognition from 'react-speech-recognition';
 import Notifications from 'react-notification-system-redux';
 import Modal from 'react-modal';
 import Dropzone from 'react-dropzone';
+import { Table } from 'react-bootstrap';
 // components
 import Canvas from './components/Canvas';
 import ElementSelector from './components/ElementSelector';
@@ -82,6 +83,12 @@ class App extends Component {
     }
 
     render() {
+        const defaultBanner = () => {
+            return [
+                <img src={logo} className='App-logo' alt='logo' />,
+                <h2>Nothing But Net</h2>
+            ]
+        };
         return (
             <div className='App'>
                 <Notifications
@@ -99,20 +106,48 @@ class App extends Component {
                     />
                 </Modal> :
                 <div className={`App-header${this.state.listening ? ' listening' : ''}`}>
-                    <img src={logo} className='App-logo' alt='logo' />
-                    <h2>Nothing But Net</h2>
+                    {
+                        this.state.listening ?
+                            <h1>{this.props.transcript}</h1> :
+                            defaultBanner()
+                    }
+
                 </div>
                 <Canvas
                     transcript={this.props.transcript}
                     resetTranscript={this.props.resetTranscript}
                 />
-                <ElementSelector
-                    transcript={this.props.transcript}
-                    resetTranscript={this.props.resetTranscript}
-                />
-                <button onClick={() => {console.log('undo'); this.props.undo()}} >
-                    Undo
-                </button>
+                {/*<ElementSelector*/}
+                    {/*transcript={this.props.transcript}*/}
+                    {/*resetTranscript={this.props.resetTranscript}*/}
+                {/*/>*/}
+                <Table
+                    className="command-table"
+                    striped
+                    hover
+                >
+                    <thead>
+                        <th>Action</th>
+                        <th>Keyboard shortcut</th>
+                        <th>To use the assistant, say:</th>
+                    </thead>
+                    <tbody>
+                    {
+                        this.props.commands.map((command, commandKey) => {
+                            const title = command.get('title');
+                            const key = command.get('key');
+                            const speech = command.get('command');
+                            return (
+                                <tr onClick={this.props.commandMap.get(commandKey)}>
+                                    <td className='text-left'>{title}</td>
+                                    <td className='text-left'>{key}</td>
+                                    <td className='text-left'>{speech}</td>
+                                </tr>
+                            )
+                        })
+                    }
+                    </tbody>
+                </Table>
             </div>
         );
     }
