@@ -1,0 +1,42 @@
+/* set width based on height*/
+.svg-canvas-wide {
+    height: 60vh;
+    width: 100vh;
+}
+
+/* set height based on width*/
+.svg-canvas-tall {
+    width: 100vw;
+    height: 60vw;
+}
+
+.svg-canvas {
+    border: black;
+    border-width: 1px;
+    border-style: solid;
+}
+
+.svg-canvas path {
+    stroke: black;
+}
+
+.svg-canvas circle {
+    stroke: black;
+    fill: none;
+    cursor: pointer;
+    pointer-events: visible;
+}
+.svg-canvas rect {
+    stroke: black;
+    fill: none;
+    cursor: pointer;
+    pointer-events: visible;
+}
+
+.svg-canvas > .selected {
+    stroke: red;
+}
+
+.svg-canvas > .moving {
+    fill: yellow;
+}

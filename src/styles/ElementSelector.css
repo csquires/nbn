@@ -1,0 +1,47 @@
+.selector-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.selector-container ul {
+    display: inline-block;
+}
+
+.selector-container h3 {
+    display: inline-block;
+}
+
+.selector-list li {
+    display: inline-block;
+    cursor: pointer;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border: black;
+    border-style: solid;
+    border-width: 1px;
+}
+
+.selector-list li svg {
+    height: 100px;
+}
+
+.node-selector {
+    fill: none;
+    stroke: black;
+}
+
+.connection-selector {
+    stroke: black;
+}
+
+.interaction-selector {
+    stroke: black;
+    fill: none;
+}
+
+.selector-list > .selected {
+    background-color: yellow;
+}
