@@ -1,6 +1,10 @@
+// external
 import Immutable, { Map, List, Set } from 'immutable';
+import _ from 'lodash';
+// utils
 import ActionTypes from '../utils/ActionTypes';
 import * as networkAnalysis from '../utils/networkAnalysis';
+
 
 const initialState = Map({
     past: List([]),
@@ -19,6 +23,9 @@ const initialState = Map({
     future: List([])
 });
 
+const blackList = [ActionTypes.NODE.BEGIN_LABEL];
+const isBlacklisted = (action) => _.includes(blackList, action);
+
 const timeReducer = (overallState=initialState, action) => {
     const currentState = overallState.get('present');
     switch(action.type) {
@@ -30,10 +37,9 @@ const timeReducer = (overallState=initialState, action) => {
                 .update('future', (future) => future.unshift(currentState));
         default:
             const newState = stateReducer(currentState, action);
-            if (newState!== currentState ) {
-                return overallState
-                    .update('past', (past) => past.push(currentState))
-                    .set('present', newState);
+            overallState = overallState.set('present', newState);
+            if (!isBlacklisted(action) && newState !== currentState) {
+                overallState = overallState.update('past', (past) => past.push(currentState))
             }
             return overallState;
     }
@@ -75,6 +81,17 @@ const stateReducer = (state, action) => {
             const cx = action.payload.cx;
             const cy = action.payload.cy;
             state = state.updateIn(['nodes', key], (node) => node.set('cx', cx).set('cy', cy));
+            return state;
+        }
+        case ActionTypes.NODE.BEGIN_LABEL: {
+            const key = action.payload.key;
+            state = state.updateIn(['nodes', key], (node) => node.set('is_labelling', true));
+            return state;
+        }
+        case ActionTypes.NODE.LABEL: {
+            const key = action.payload.key;
+            const label = action.payload.label;
+            state = state.updateIn(['nodes', key], (node) => node.set('label', label));
             return state;
         }
         case ActionTypes.CONNECTION.ADD:

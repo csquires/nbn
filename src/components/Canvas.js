@@ -59,7 +59,8 @@ class Canvas extends Component {
             mouseMoveX: null,
             mouseMoveY: null,
             intersectedShape: null,
-            touches: Map({})
+            touches: Map({}),
+
         };
         // helpers
         this._handleResize = this._handleResize.bind(this);
@@ -304,15 +305,21 @@ class Canvas extends Component {
                         const [movingCx, movingCy] = this._maybeMovingCoordinates({shape: 'node', key: key});
                         const isMoving = !!movingCx;
                         const color = getColor(centrality);
+                        const isLabelling = node.get('is_labelling');
                         return (
+                            <g key={key}>
                             <circle
-                                key={key}
                                 cx={movingCx ? movingCx : cx}
                                 cy={movingCy ? movingCy : cy}
                                 r={CIRCLE_RADIUS}
                                 className={getClass(isSelected, isMoving)}
                                 style={{fill: color}}
-                            />);
+                            />
+                                { isLabelling ?
+                                    <text x={cx} y={cy} textAnchor='middle' contentEditable={true}>Label</text> :
+                                    null
+                                }
+                            </g>);
                     })
                 }
                 {
@@ -372,7 +379,8 @@ const mapDispatchToProps = (dispatch) => ({
     addNode: (cx, cy) => dispatch(networkActions.addNode(cx, cy)),
     addConnection: (source, target) => dispatch(networkActions.addConnection(source, target)),
     changeShapeSelection: ({shape, key}) => dispatch(networkActions.changeShapeSelection({shape, key})),
-    moveNode: (key, cx, cy) => dispatch(networkActions.moveNode(key, cx, cy))
+    moveNode: (key, cx, cy) => dispatch(networkActions.moveNode(key, cx, cy)),
+    startLabellingNode: (key) => dispatch(networkActions.startLabellingNode(key))
 });
 
 export default connect(mapStateToProps, mapDispatchToProps, null, {withRef: true})(Canvas);

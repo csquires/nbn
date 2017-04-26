@@ -2,7 +2,9 @@ const ActionTypes = {
     NODE: {
         ADD: 'NODE/ADD',
         DELETE: 'NODE/DELETE',
-        MOVE: 'NODE/MOVE'
+        MOVE: 'NODE/MOVE',
+        LABEL: 'NODE/LABEL',
+        BEGIN_LABEL: 'NODE/BEGIN_LABEL'
     },
     CONNECTION: {
         ADD: 'CONNECTION/ADD',

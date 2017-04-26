@@ -98,3 +98,26 @@ export const moveNode = (key, cx, cy) => {
         }
     }
 };
+
+export const startLabellingNode = (key) => {
+    return {
+        type: ActionTypes.NODE.BEGIN_LABEL,
+        payload: {
+            key: key
+        }
+    }
+};
+
+export const labelNode = (key, label) => {
+    return (dispatch, getState) => {
+        const nodes = getState().shapes.getIn(['present', 'nodes']);
+        const labelAlreadyExists = nodes.some((node) => node.get('label') === label);
+        dispatch({
+            type: ActionTypes.NODE.LABEL,
+            payload: {
+                key: key,
+                label: label
+            }
+        })
+    }
+};

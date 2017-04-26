@@ -1,6 +1,6 @@
 import ActionTypes from '../utils/ActionTypes';
 import Immutable, { Map } from 'immutable';
-import * as shapeActions from '../actions/networkActions';
+import * as networkActions from '../actions/networkActions';
 import * as modeActions from '../actions/modeActions';
 
 const hintSettingsDefault = {
@@ -70,19 +70,26 @@ const initialState = Immutable.fromJS({
             title: "Download your network",
             response: "Downloading your network",
             ...getCommandConfig({key: "l", command: "download", result: "download your network"})
+        },
+        label: {
+            settings: hintSettingsDefault,
+            title: "Label selected node",
+            response: "Labelled node",
+            ...getCommandConfig({key: 'n', command: 'label', result: 'label the selected node'})
         }
     }
 });
 
 export const commandMap = Map({
-    connect: shapeActions.connectSelected,
-    delete_selected: shapeActions.deleteSelectedShapes,
-    undo: shapeActions.undo,
-    deselect: shapeActions.deselectAll,
-    select: shapeActions.selectAll,
-    compute_centralities: shapeActions.computeCentralities,
+    connect: networkActions.connectSelected,
+    delete_selected: networkActions.deleteSelectedShapes,
+    undo: networkActions.undo,
+    deselect: networkActions.deselectAll,
+    select: networkActions.selectAll,
+    compute_centralities: networkActions.computeCentralities,
     open_upload: () => modeActions.openModal('file_upload'),
-    download_network: modeActions.downloadNetwork
+    download_network: modeActions.downloadNetwork,
+    label: () => networkActions.startLabellingNode(1)
 });
 
 const commandReducer = (state=initialState, action) => {
