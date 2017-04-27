@@ -33,10 +33,10 @@
     pointer-events: visible;
 }
 
-.svg-canvas > .selected {
+.node.node-selected {
     stroke: red;
 }
 
-.svg-canvas > .moving {
+.node.node-moving {
     fill: yellow;
 }

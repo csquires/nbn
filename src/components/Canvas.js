@@ -35,9 +35,10 @@ const inInteractionBox = (canvasX, canvasY, interaction) =>
     Math.abs(canvasX - interaction.get('cx')) <= BOX_WIDTH/2 &&
         Math.abs(canvasY - interaction.get('cy')) <= BOX_HEIGHT/2;
 const getClass = (isSelected, isMoving) => {
-    const selectionString = isSelected ? 'selected ' : '';
-    const movingString = isMoving ? 'moving ' : '';
-    return selectionString + movingString;
+    const baseClass = 'node ';
+    const selectionString = isSelected ? 'node-selected ' : '';
+    const movingString = isMoving ? 'node-moving ' : '';
+    return baseClass + selectionString + movingString;
 };
 const getColor = (decimal) => {
     if (typeof decimal === 'undefined') return '';
