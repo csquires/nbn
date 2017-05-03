@@ -1,5 +1,6 @@
 // constants
 import ActionTypes from '../utils/ActionTypes';
+import * as networkReducer from '../reducers/networkReducer';
 
 
 export const addNode = (cx, cy) => {
@@ -108,9 +109,28 @@ export const startLabellingNode = (key) => {
     }
 };
 
+export const startLabellingSelected = () => {
+    return (dispatch, getState) => {
+        const currentShapes = getState().shapes.get('present');
+        const selectedNodes = currentShapes.get('nodes').filter(networkReducer.isSelected);
+        const selectedInteractions = currentShapes.get('interactions').filter(networkReducer.isSelected);
+        const numSelected = selectedNodes.size + selectedInteractions.size;
+        if (numSelected !== 1) {
+            // error
+        } else {
+            console.log('selected nodes', selectedNodes);
+            const maybeSelectedNodeKey = selectedNodes.keySeq().first();
+            const maybeSelectedInteractionKey = selectedInteractions.keySeq().first();
+            if (maybeSelectedNodeKey) dispatch(startLabellingNode(maybeSelectedNodeKey));
+            // if (maybeSelectedInteractionKey) {};
+        }
+    }
+};
+
 export const labelNode = (key, label) => {
     return (dispatch, getState) => {
         const nodes = getState().shapes.getIn(['present', 'nodes']);
+        console.log('labelling node');
         const labelAlreadyExists = nodes.some((node) => node.get('label') === label);
         dispatch({
             type: ActionTypes.NODE.LABEL,

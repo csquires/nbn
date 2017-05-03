@@ -45,7 +45,7 @@ const timeReducer = (overallState=initialState, action) => {
     }
 };
 
-const isSelected = (shape) => shape.get('selected');
+export const isSelected = (shape) => shape.get('selected');
 const connectedToSelected = (connection, nodes) => {
     const sourceKey = connection.get('source');
     const targetKey = connection.get('target');
@@ -91,7 +91,7 @@ const stateReducer = (state, action) => {
         case ActionTypes.NODE.LABEL: {
             const key = action.payload.key;
             const label = action.payload.label;
-            state = state.updateIn(['nodes', key], (node) => node.set('label', label));
+            state = state.updateIn(['nodes', key], (node) => node.set('label', label).set('is_labelling', false));
             return state;
         }
         case ActionTypes.CONNECTION.ADD:

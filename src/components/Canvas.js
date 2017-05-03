@@ -5,14 +5,11 @@ import _ from 'lodash';
 import { Map } from 'immutable';
 // style
 import '../styles/Canvas.css';
+// components
+import { Node, Connection } from './GraphElements';
 // other
 import * as networkActions from '../actions/networkActions';
-
-const SVG_WIDTH = 1000;
-const SVG_HEIGHT = 600;
-const CIRCLE_RADIUS = SVG_WIDTH*0.02;
-const BOX_WIDTH = SVG_WIDTH*0.04;
-const BOX_HEIGHT = SVG_WIDTH*0.04;
+import * as Constants from '../utils/Constants';
 
 // const mapTouches = (touches, f) => {
 //     const numTouches = touches.length;
@@ -30,22 +27,17 @@ const eachTouch = (touches, f) => {
 };
 const dist = (x1, y1, x2, y2) => Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
 const inNodeCircle = (canvasX, canvasY, node) =>
-    dist(canvasX, canvasY, node.get('cx'), node.get('cy')) <= CIRCLE_RADIUS;
+    dist(canvasX, canvasY, node.get('cx'), node.get('cy')) <= Constants.CIRCLE_RADIUS;
 const inInteractionBox = (canvasX, canvasY, interaction) =>
-    Math.abs(canvasX - interaction.get('cx')) <= BOX_WIDTH/2 &&
-        Math.abs(canvasY - interaction.get('cy')) <= BOX_HEIGHT/2;
+    Math.abs(canvasX - interaction.get('cx')) <= Constants.BOX_WIDTH/2 &&
+        Math.abs(canvasY - interaction.get('cy')) <= Constants.BOX_HEIGHT/2;
 const getClass = (isSelected, isMoving) => {
     const baseClass = 'node ';
     const selectionString = isSelected ? 'node-selected ' : '';
     const movingString = isMoving ? 'node-moving ' : '';
     return baseClass + selectionString + movingString;
 };
-const getColor = (decimal) => {
-    if (typeof decimal === 'undefined') return '';
-    const red = Math.round(decimal*255);
-    const blue = Math.round((1-decimal)*255);
-    return `rgb(${red},0,${blue})`;
-};
+
 
 class Canvas extends Component {
 
@@ -67,7 +59,8 @@ class Canvas extends Component {
         this._handleResize = this._handleResize.bind(this);
         this._toCanvasCoordinates = this._toCanvasCoordinates.bind(this);
         this._checkIntersection = this._checkIntersection.bind(this);
-        this._maybeMovingCoordinates = this._maybeMovingCoordinates.bind(this);
+        this.getMovementInfo = this.getMovementInfo.bind(this);
+        this.getNodeMovementInfo = this.getNodeMovementInfo.bind(this);
         this._makeNewShape = this._makeNewShape.bind(this);
         this._moveShape = this._moveShape.bind(this);
         // handlers
@@ -88,20 +81,12 @@ class Canvas extends Component {
         this.canvas.addEventListener('touchstart', this._handleTouchStart);
         this.canvas.addEventListener('touchmove', this._handleTouchMove);
         this.canvas.addEventListener('touchend', this._handleTouchEnd);
-
-        this.canvas.addEventListener('mousedown', this._handleMouseDown);
-        this.canvas.addEventListener('mousemove', this._handleMouseMove);
-        this.canvas.addEventListener('mouseup', this._handleMouseUp);
     }
     componentWillUnmount() {
         window.removeEventListener('resize');
         this.canvas.removeEventListener('touchstart');
         this.canvas.removeEventListener('touchmove');
         this.canvas.removeEventListener('touchend');
-
-        this.canvas.removeEventListener('mousedown');
-        this.canvas.removeEventListener('mousemove');
-        this.canvas.removeEventListener('mouseup');
     }
 
     _setCanvasRect() {
@@ -113,7 +98,7 @@ class Canvas extends Component {
         const windowHeight = window.innerHeight;
         const windowWidth = window.innerWidth;
         const canvasHeight = windowHeight*.6;
-        const shouldSetBasedOnHeight = windowWidth > canvasHeight/(SVG_HEIGHT/SVG_WIDTH);
+        const shouldSetBasedOnHeight = windowWidth > canvasHeight/(Constants.SVG_HEIGHT/Constants.SVG_WIDTH);
 
         if (shouldSetBasedOnHeight) this.setState({svgClass: 'wide'});
         else this.setState({svgClass: 'tall'});
@@ -127,8 +112,8 @@ class Canvas extends Component {
     _toCanvasCoordinates(pageX, pageY) {
         const canvasRect = this.state.canvasRect ? this.state.canvasRect : this._setCanvasRect();
         return [
-            (pageX - canvasRect.left)/canvasRect.width*SVG_WIDTH,
-            (pageY - canvasRect.top - window.scrollY)/canvasRect.height*SVG_HEIGHT
+            (pageX - canvasRect.left)/canvasRect.width*Constants.SVG_WIDTH,
+            (pageY - canvasRect.top - window.scrollY)/canvasRect.height*Constants.SVG_HEIGHT
         ]
     };
     _checkIntersection(canvasX, canvasY) {
@@ -226,7 +211,7 @@ class Canvas extends Component {
 
     // mouse events
     _handleMouseDown(e) {
-        if (e.which !== 1) return; // only take left mouse clicks
+        if (e.button !== 0) return; // only take left mouse clicks
         e.preventDefault();
         const [canvasX, canvasY] = this._toCanvasCoordinates(e.pageX, e.pageY);
         this.setState({
@@ -239,7 +224,7 @@ class Canvas extends Component {
         });
     }
     _handleMouseMove(e) {
-        if (e.which !== 1) return; // only take left mouse clicks
+        if (e.button !== 0) return; // only take left mouse clicks
         if (this.state.isMouseDown) {
             e.preventDefault();
             const [canvasX, canvasY] = this._toCanvasCoordinates(e.pageX, e.pageY);
@@ -247,7 +232,7 @@ class Canvas extends Component {
         }
     }
     _handleMouseUp(e) {
-        if (e.which !== 1) return; // only take left mouse clicks
+        if (e.button !== 0) return; // only take left mouse clicks
         e.preventDefault();
         const [canvasX, canvasY] = this._toCanvasCoordinates(e.pageX, e.pageY);
         const maybeIntersection = this.state.intersectedShape;
@@ -267,22 +252,48 @@ class Canvas extends Component {
     }
 
     // if the shape was intersected by a click or touch, returns the current x and y of that click or touch, otherwise null
-    _maybeMovingCoordinates({shape, key}) {
+    getMovementInfo({shape, key}) {
         const didMouseIntersect = this.state.intersectedShape &&
             this.state.intersectedShape.shape === shape &&
             this.state.intersectedShape.key === key;
-        if (didMouseIntersect) return [this.state.mouseMoveX, this.state.mouseMoveY];
+        if (didMouseIntersect) return {
+            cx: this.state.mouseMoveX,
+            cy: this.state.mouseMoveY,
+            isMoving: true
+        };
         const matchingTouch = this.state.touches.find((touch) => {
             const maybeIntersection = touch.get('intersectedShape');
             return maybeIntersection && maybeIntersection.shape === shape && maybeIntersection.key === key;
         });
-        if (matchingTouch) return [matchingTouch.get('touchMoveX'), matchingTouch.get('touchMoveY')];
-        return [null, null];
+        if (matchingTouch) return {
+            cx: matchingTouch.get('touchMoveX'),
+            cy: matchingTouch.get('touchMoveY'),
+            isMoving: true
+        };
+        return null;
+    }
+    getNodeMovementInfo(key, node) {
+        const movingCoordinates = this.getMovementInfo({shape: 'node', key: key});
+        if (movingCoordinates) return movingCoordinates;
+        // look up the node if it isn't provided
+        if (!node) node = this.props.nodes.get(key);
+        return {
+            cx: node.get('cx'),
+            cy: node.get('cy'),
+            isMoving: false
+        }
     }
 
     render() {
         return (
-            <svg className={`svg-canvas svg-canvas-${this.state.svgClass}`} ref={(c) => this.canvas = c} viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}>
+            <svg
+                className={`svg-canvas svg-canvas-${this.state.svgClass}`}
+                ref={(c) => this.canvas = c}
+                onMouseDown={this._handleMouseDown}
+                onMouseMove={this._handleMouseMove}
+                onMouseUp={this._handleMouseUp}
+                viewBox={`0 0 ${Constants.SVG_WIDTH} ${Constants.SVG_HEIGHT}`}
+            >
                 {
                     this.state.touches.map((touch) => {
                         const cx = touch.get('touchMoveX');
@@ -298,60 +309,30 @@ class Canvas extends Component {
                     })
                 }
                 {
-                    this.props.nodes.map((node, key) => {
-                        const cx = node.get('cx');
-                        const cy = node.get('cy');
-                        const isSelected = node.get('selected');
-                        const centrality = node.get('centrality');
-                        const [movingCx, movingCy] = this._maybeMovingCoordinates({shape: 'node', key: key});
-                        const isMoving = !!movingCx;
-                        const color = getColor(centrality);
-                        const isLabelling = node.get('is_labelling');
-                        return (
-                            <g key={key}>
-                            <circle
-                                cx={movingCx ? movingCx : cx}
-                                cy={movingCy ? movingCy : cy}
-                                r={CIRCLE_RADIUS}
-                                className={getClass(isSelected, isMoving)}
-                                style={{fill: color}}
-                            />
-                                { isLabelling ?
-                                    <text x={cx} y={cy} textAnchor='middle' contentEditable={true}>Label</text> :
-                                    null
-                                }
-                            </g>);
-                    })
+                    this.props.nodes.map((node, key) =>
+                        <Node
+                            key={key}
+                            nodeKey={key}
+                            node={node}
+                            getNodeMovementInfo={this.getNodeMovementInfo}
+                        />
+                    )
                 }
                 {
-                    this.props.connections.map((connection) => {
-                        const sourceKey = connection.get('source');
-                        const [movingCxSource, movingCySource] = this._maybeMovingCoordinates({shape: 'node', key: sourceKey});
-                        const targetKey = connection.get('target');
-                        const [movingCxTarget, movingCyTarget] = this._maybeMovingCoordinates({shape: 'node', key: targetKey});
-                        // const length = dist(x1, y1, x2, y2);
-                        // const angle = Math.atan2(y2-y1, x2-x1);
-                        const x1 = movingCxSource ? movingCxSource : this.props.nodes.get(sourceKey).get('cx');
-                        const y1 = movingCySource ? movingCySource : this.props.nodes.get(sourceKey).get('cy');
-                        const x2 = movingCxTarget ? movingCxTarget : this.props.nodes.get(targetKey).get('cx');
-                        const y2 = movingCyTarget ? movingCyTarget : this.props.nodes.get(targetKey).get('cy');
-                        // const leg1x = x2 - .2*length*Math.cos(angle-Math.PI/4);
-                        // const leg1y = y2 - .2*length*Math.sin(angle-Math.PI/4);
-                        // const leg2x = x2 - .2*length*Math.cos(angle+Math.PI/4);
-                        // const leg2y = y2 - .2*length*Math.sin(angle+Math.PI/4);
-                        return (
-                            <path d={`
-                                M ${x1} ${y1} ${x2} ${y2}
-                            `} />
-                        );
-                    })
+                    this.props.connections.map((connection, key) =>
+                        <Connection
+                            key={key}
+                            connection={connection}
+                            getNodeMovementInfo={this.getNodeMovementInfo}
+                        />
+                    )
                 }
                 {
                     this.props.interactions.map((interaction) => {
-                        const x = interaction.get('cx') - BOX_WIDTH/2;
-                        const y = interaction.get('cy') - BOX_HEIGHT/2;
+                        const x = interaction.get('cx') - Constants.BOX_WIDTH/2;
+                        const y = interaction.get('cy') - Constants.BOX_HEIGHT/2;
                         const selected = interaction.get('selected');
-                        return <rect x={x} y={y} width={BOX_WIDTH} height={BOX_HEIGHT} className={getClass(selected)}/>;
+                        return <rect x={x} y={y} width={Constants.BOX_WIDTH} height={Constants.BOX_HEIGHT} className={getClass(selected)}/>;
                     })
                 }
             </svg>

@@ -89,7 +89,7 @@ export const commandMap = Map({
     compute_centralities: networkActions.computeCentralities,
     open_upload: () => modeActions.openModal('file_upload'),
     download_network: modeActions.downloadNetwork,
-    label: () => networkActions.startLabellingNode(1)
+    label: networkActions.startLabellingSelected
 });
 
 const commandReducer = (state=initialState, action) => {
