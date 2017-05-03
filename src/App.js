@@ -18,6 +18,7 @@ import { commandMap } from './reducers/commandReducer';
 import * as notificationActions from './actions/notificationActions';
 import * as modeActions from './actions/modeActions';
 import * as utils from './utils/utils';
+import * as config from './config';
 
 
 class App extends Component {
@@ -71,7 +72,7 @@ class App extends Component {
                     this.props.resetTranscript();
                     this.setState({listening: false, recognizedSpeech: commandSpeech});
                     setTimeout(() => this.setState({recognizedSpeech: null}), 2000);
-                    if (response) this.speak(response);
+                    if (response && config.SHOULD_SPEAK_ON_BUTTON_PRESS) this.speak(response);
                 }
             })
         }
@@ -90,7 +91,7 @@ class App extends Component {
             const action = this.props.commandMap.get(matchingCommandKey);
             action();
             const response = this.props.commands.get(matchingCommandKey).get('response');
-            if (response) this.speak(response);
+            if (response && config.SHOULD_SPEAK_ON_KEY_PRESS) this.speak(response);
         }
     }
 
@@ -156,7 +157,13 @@ class App extends Component {
                             const speech = command.get('command');
                             const response = command.get('response');
                             return (
-                                <tr onClick={() => {this.props.commandMap.get(commandKey)(); if (response) this.speak(response)}}>
+                                <tr
+                                    onClick={() => {
+                                        const action = this.props.commandMap.get(commandKey);
+                                        action();
+                                        if (response && config.SHOULD_SPEAK_ON_BUTTON_PRESS) this.speak(response)}
+                                    }
+                                >
                                     <td className='text-left'>{title}</td>
                                     <td className='text-left'>{key}</td>
                                     <td className='text-left'>{speech}</td>
