@@ -5,6 +5,7 @@ import { connect } from 'react-redux';
 // other
 import * as Constants from '../utils/Constants';
 import * as networkActions from '../actions/networkActions';
+import * as utils from '../utils/utils';
 
 const getClass = (isSelected, isMoving) => {
     const baseClass = 'node ';
@@ -18,6 +19,10 @@ const getColor = (decimal) => {
     const blue = Math.round((1-decimal)*255);
     return `rgb(${red},0,${blue})`;
 };
+const mousePropTypes = ImmutablePropTypes.contains({
+    isDown: React.PropTypes.bool.isRequired
+});
+const touchesPropTypes = ImmutablePropTypes.contains({});
 
 class UnconnectedNode extends Component {
 
@@ -27,29 +32,56 @@ class UnconnectedNode extends Component {
             tempLabel: ''
         };
         this._handleKeyPress = this._handleKeyPress.bind(this);
+        this._handleKeyUp = this._handleKeyUp.bind(this);
+        this.getInputBoxWidthSvg = this.getInputBoxWidthSvg.bind(this);
+    }
+
+    componentWillReceiveProps(nextProps) {
+        const shallLabel = nextProps.node.get('is_labelling');
+        const wasLabelling = this.props.node.get('is_labelling');
+        if (shallLabel && !wasLabelling) {
+            this.setState({tempLabel: nextProps.node.get('label')})
+        }
     }
 
     _handleKeyPress(e) {
-        if (e.key === 'Enter') {
-            console.log('here');
-            this.props.label(this.props.nodeKey, this.state.tempLabel);
+        switch (e.key) {
+            case ('Enter'): {
+                this.props.label(this.props.nodeKey, this.state.tempLabel);
+                break;
+            }
         }
         e.stopPropagation();
     }
 
-    handleClick(e) {
-        console.log('clicked input');
+    _handleClick(e) {
         e.stopPropagation();
     }
 
-    handleMouseDown(e) {
-        console.log('mouse down input');
+    _handleMouseDown(e) {
         e.stopPropagation();
+    }
+
+    _handleKeyUp(e) {
+        switch (e.keyCode) {
+            case (27): { // esc
+                this.props.label(this.props.nodeKey, '');
+            }
+        }
+        e.stopPropagation();
+    }
+
+    getInputBoxWidthSvg() {
+        const inputBox = this.inputBox;
+        const inputBoxWidthHtml = inputBox && this.inputBox.getBoundingClientRect().width;
+        console.log('width html', inputBoxWidthHtml);
+        return 100;
     }
 
     render() {
-        const {nodeKey, node} = this.props;
-        const {cx, cy, isMoving} = this.props.getNodeMovementInfo(nodeKey, node);
+        const {mouse, touches, nodeKey, node} = this.props;
+        const {cx, cy, isMoving} = utils.getNodeMovementInfo(mouse, touches, nodeKey, node);
+        const placeholder = "label";
 
         return (
             <g>
@@ -62,28 +94,42 @@ class UnconnectedNode extends Component {
                 />
                 {
                     node.get('is_labelling') ?
-                        <foreignObject x={cx} y={cy}>
+                        <foreignObject
+                            x={cx}
+                            y={cy}
+                            height={Constants.CIRCLE_RADIUS}
+                            width={this.getInputBoxWidthSvg()}
+                        >
                             <input
-                                placeholder="label"
+                                autoFocus
+                                ref={(c) => this.inputBox = c}
+                                placeholder={placeholder}
                                 value={this.state.tempLabel}
                                 onChange={(e) => this.setState({tempLabel: e.target.value})}
-                                onMouseDown={this.handleMouseDown}
-                                onClick={this.handleClick}
+                                onMouseDown={this._handleMouseDown}
+                                onClick={this._handleClick}
                                 onKeyPress={this._handleKeyPress}
+                                onKeyUp={this._handleKeyUp}
                             />
                         </foreignObject> :
-                        null
+                        <text
+                            x={cx}
+                            y={cy}
+                            textAnchor='middle'
+                        >
+                            {node.get('label')}
+                        </text>
                 }
             </g>
         )
     }
 }
 
-const mapStateToProps = (state) => ({
+const mapStateToPropsNode = (state) => ({
 
 });
 
-const mapDispatchToProps = (dispatch) => ({
+const mapDispatchToPropsNode = (dispatch) => ({
     label: (key, label) => dispatch(networkActions.labelNode(key, label))
 });
 
@@ -96,23 +142,18 @@ UnconnectedNode.propTypes = {
         centrality: React.PropTypes.number,
         is_labelling: React.PropTypes.boolean,
     }),
-    getNodeMovementInfo: React.PropTypes.func.isRequired,
+    mouse: mousePropTypes,
+    touches: touchesPropTypes,
 };
 
-export const Node = connect(mapStateToProps, mapDispatchToProps)(UnconnectedNode);
+export const Node = connect(mapStateToPropsNode, mapDispatchToPropsNode)(UnconnectedNode);
 
 
 
-export class Connection extends Component {
+class UnconnectedConnection extends Component {
 
     render() {
-        const {connection} = this.props;
-        const [sourceKey, targetKey] = [connection.get('source'), connection.get('target')];
-        const sourceMovementInfo = this.props.getNodeMovementInfo(sourceKey);
-        const [cxSource, cySource] = [sourceMovementInfo.cx, sourceMovementInfo.cy];
-        const targetMovementInfo = this.props.getNodeMovementInfo(targetKey);
-        const [cxTarget, cyTarget] = [targetMovementInfo.cx, targetMovementInfo.cy];
-
+        const {cxSource, cySource, cxTarget, cyTarget} = this.props;
         // potentially for directed
         // const length = dist(x1, y1, x2, y2);
         // const angle = Math.atan2(y2-y1, x2-x1);
@@ -128,10 +169,31 @@ export class Connection extends Component {
     }
 }
 
-Connection.propTypes = {
+const mapStateToPropsConnection = (state, ownProps) => {
+    const {mouse, touches, connection} = ownProps;
+    // get source/target keys and nodes
+    const [sourceKey, targetKey] = [connection.get('source'), connection.get('target')];
+    const nodes = state.shapes.getIn(['present', 'nodes']);
+    const [sourceNode, targetNode] = [nodes.get(sourceKey), nodes.get(targetKey)];
+    // get cx and cy of source and target and return
+    const sourceMovementInfo = utils.getNodeMovementInfo(mouse, touches, sourceKey, sourceNode);
+    const [cxSource, cySource] = [sourceMovementInfo.cx, sourceMovementInfo.cy];
+    const targetMovementInfo = utils.getNodeMovementInfo(mouse, touches, targetKey, targetNode);
+    const [cxTarget, cyTarget] = [targetMovementInfo.cx, targetMovementInfo.cy];
+    return {cxSource, cySource, cxTarget, cyTarget};
+};
+
+const mapDispatchToPropsConnection = (dispatch) => ({
+
+});
+
+UnconnectedConnection.propTypes = {
     connection: ImmutablePropTypes.contains({
         source: React.PropTypes.any.isRequired,
         target: React.PropTypes.any.isRequired,
     }),
-    getNodeMovementInfo: React.PropTypes.func.isRequired,
+    mouse: mousePropTypes,
+    touches: touchesPropTypes,
 };
+
+export const Connection = connect(mapStateToPropsConnection, mapDispatchToPropsConnection)(UnconnectedConnection);
