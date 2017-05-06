@@ -31,9 +31,15 @@ class UnconnectedNode extends Component {
         this.state = {
             tempLabel: ''
         };
-        this._handleKeyPress = this._handleKeyPress.bind(this);
-        this._handleKeyUp = this._handleKeyUp.bind(this);
+        // handlers for input
+        this._handleKeyPressInput = this._handleKeyPressInput.bind(this);
+        this._handleKeyUpInput = this._handleKeyUpInput.bind(this);
+        // main handlers
+        this._handleMouseDown = this._handleMouseDown.bind(this);
+        this._handleMouseUp = this._handleMouseUp.bind(this);
+        // helpers
         this.getInputBoxWidthSvg = this.getInputBoxWidthSvg.bind(this);
+        this._thisNode = this._thisNode.bind(this);
     }
 
     componentWillReceiveProps(nextProps) {
@@ -44,29 +50,32 @@ class UnconnectedNode extends Component {
         }
     }
 
-    _handleKeyPress(e) {
+    // handlers for input
+    _handleKeyPressInput(e) {
         switch (e.key) {
             case ('Enter'): {
                 this.props.label(this.props.nodeKey, this.state.tempLabel);
                 break;
             }
+            default:
+                break;
         }
         e.stopPropagation();
     }
-
-    _handleClick(e) {
+    _handleClickInput(e) {
         e.stopPropagation();
     }
-
-    _handleMouseDown(e) {
+    _handleMouseDownInput(e) {
         e.stopPropagation();
     }
-
-    _handleKeyUp(e) {
+    _handleKeyUpInput(e) {
         switch (e.keyCode) {
             case (27): { // esc
                 this.props.label(this.props.nodeKey, '');
+                break;
             }
+            default:
+                break;
         }
         e.stopPropagation();
     }
@@ -78,6 +87,25 @@ class UnconnectedNode extends Component {
         return 100;
     }
 
+    _thisNode() {
+        return {shape: 'node', key: this.props.nodeKey};
+    }
+    _handleTouchStart(e) {
+        const touches = e.changedTouches;
+        utils.eachTouch(touches, (touch, key) => {
+            this.props.setTouchIntersection(key, this._thisNode());
+        });
+    }
+    _handleMouseDown(e) {
+        if (e.button !== 0) return; // only take left mouse clicks
+        this.props.setMouseIntersection(this._thisNode());
+    }
+    _handleMouseUp(e) {
+        if (e.button !== 0) return; // only take left mouse clicks
+        this.props.resetMouse();
+        e.stopPropagation(); // don't allow nodes to be placed on top of this one
+    }
+
     render() {
         const {mouse, touches, nodeKey, node} = this.props;
         const {cx, cy, isMoving} = utils.getNodeMovementInfo(mouse, touches, nodeKey, node);
@@ -86,6 +114,9 @@ class UnconnectedNode extends Component {
         return (
             <g>
                 <circle
+                    onTouchStart={this._handleTouchStart}
+                    onMouseDown={this._handleMouseDown}
+                    onMouseUp={this._handleMouseUp}
                     cx={cx}
                     cy={cy}
                     r={Constants.CIRCLE_RADIUS}
@@ -106,10 +137,10 @@ class UnconnectedNode extends Component {
                                 placeholder={placeholder}
                                 value={this.state.tempLabel}
                                 onChange={(e) => this.setState({tempLabel: e.target.value})}
-                                onMouseDown={this._handleMouseDown}
-                                onClick={this._handleClick}
-                                onKeyPress={this._handleKeyPress}
-                                onKeyUp={this._handleKeyUp}
+                                onMouseDown={this._handleMouseDownInput}
+                                onClick={this._handleClickInput}
+                                onKeyPress={this._handleKeyPressInput}
+                                onKeyUp={this._handleKeyUpInput}
                             />
                         </foreignObject> :
                         <text
@@ -130,7 +161,7 @@ const mapStateToPropsNode = (state) => ({
 });
 
 const mapDispatchToPropsNode = (dispatch) => ({
-    label: (key, label) => dispatch(networkActions.labelNode(key, label))
+    label: (key, label) => dispatch(networkActions.labelNode(key, label)),
 });
 
 UnconnectedNode.propTypes = {
@@ -144,6 +175,9 @@ UnconnectedNode.propTypes = {
     }),
     mouse: mousePropTypes,
     touches: touchesPropTypes,
+    resetMouse: React.PropTypes.func.isRequired,
+    setMouseIntersection: React.PropTypes.func.isRequired,
+    setTouchIntersection: React.PropTypes.func.isRequired,
 };
 
 export const Node = connect(mapStateToPropsNode, mapDispatchToPropsNode)(UnconnectedNode);
