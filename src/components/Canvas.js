@@ -58,7 +58,7 @@ class Canvas extends Component {
         this._makeNewShape = this._makeNewShape.bind(this);
         this._moveShape = this._moveShape.bind(this);
         this.resetMouse = this.resetMouse.bind(this);
-        this.setMouseIntersection = this.setMouseIntersection.bind(this);
+        this.updateMouse = this.updateMouse.bind(this);
         // handlers
         this._handleResize = this._handleResize.bind(this);
         this._handleMouseDown = this._handleMouseDown.bind(this);
@@ -211,23 +211,28 @@ class Canvas extends Component {
         if (e.button !== 0) return; // only take left mouse clicks
         e.preventDefault();
         const [canvasX, canvasY] = this.toCanvasCoordinates(e.pageX, e.pageY);
-        const intersectedShape = this.state.mouse.get('intersectedShape');
-        if (canvasX === this.state.mouse.get('downX') && canvasY === this.state.mouse.get('downY')) {
+        const mouse = this.state.mouse;
+        const intersectedShape = mouse.get('intersectedShape');
+        if (canvasX === mouse.get('downX') && canvasY === mouse.get('downY')) {
             if (intersectedShape) this.props.changeShapeSelection(intersectedShape);
             else this._makeNewShape(canvasX, canvasY);
         } else {
-            if (intersectedShape) this._moveShape(intersectedShape, canvasX, canvasY);
+            if (intersectedShape) {
+                if (!mouse.get('isLong')) this._moveShape(intersectedShape, canvasX, canvasY);
+            }
         }
         this.resetMouse();
     }
     resetMouse() {
         this.setState({mouse: blankMouse});
     }
-    setMouseIntersection({shape, key}) {
-        this.setState((prevState) => prevState.mouse = prevState.mouse.set('intersectedShape', {shape, key}));
+    updateMouse(func) {
+        this.setState((prevState) => prevState.mouse = func(prevState.mouse));
+        console.log('updated mouse');
     }
 
     render() {
+        const mouse = this.state.mouse;
         return (
             <svg
                 className={`svg-canvas svg-canvas-${this.state.svgClass}`}
@@ -240,6 +245,13 @@ class Canvas extends Component {
                 onTouchEnd={this._handleTouchEnd}
                 viewBox={`0 0 ${Constants.SVG_WIDTH} ${Constants.SVG_HEIGHT}`}
             >
+                {
+                    this.state.mouse.get('isLong') ?
+                        <path d={`
+                            M ${mouse.get('downX')} ${mouse.get('downY')} ${mouse.get('moveX')} ${mouse.get('moveY')}
+                        `} /> :
+                        null
+                }
                 {
                     this.state.touches.map((touch) => {
                         const cx = touch.get('moveX');
@@ -262,9 +274,8 @@ class Canvas extends Component {
                             node={node}
                             mouse={this.state.mouse}
                             touches={this.state.touches}
-                            resetMouse={this.resetMouse}
-                            setMouseIntersection={this.setMouseIntersection}
                             setTouchIntersection={this.setTouchIntersection}
+                            updateMouse={this.updateMouse}
                         />
                     )
                 }

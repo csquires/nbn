@@ -98,12 +98,18 @@ class UnconnectedNode extends Component {
     }
     _handleMouseDown(e) {
         if (e.button !== 0) return; // only take left mouse clicks
-        this.props.setMouseIntersection(this._thisNode());
+        const setMouseToLong = () => this.props.updateMouse((mouse) => mouse.set('isLong', true));
+        this.longMouseTimer = setTimeout(setMouseToLong, 1000);
+        this.props.updateMouse((mouse) => mouse.set('intersectedShape', this._thisNode()));
     }
     _handleMouseUp(e) {
         if (e.button !== 0) return; // only take left mouse clicks
-        this.props.resetMouse();
-        e.stopPropagation(); // don't allow nodes to be placed on top of this one
+        const mouse = this.props.mouse;
+        if (mouse.get('isLong')) {
+            const sourceKey = mouse.get('intersectedShape').key;
+            const targetKey = this.props.nodeKey;
+            this.props.addConnection(sourceKey, targetKey);
+        }
     }
 
     render() {
@@ -162,6 +168,7 @@ const mapStateToPropsNode = (state) => ({
 
 const mapDispatchToPropsNode = (dispatch) => ({
     label: (key, label) => dispatch(networkActions.labelNode(key, label)),
+    addConnection: (source, target) => dispatch(networkActions.addConnection(source, target)),
 });
 
 UnconnectedNode.propTypes = {
@@ -175,8 +182,7 @@ UnconnectedNode.propTypes = {
     }),
     mouse: mousePropTypes,
     touches: touchesPropTypes,
-    resetMouse: React.PropTypes.func.isRequired,
-    setMouseIntersection: React.PropTypes.func.isRequired,
+    updateMouse: React.PropTypes.func.isRequired,
     setTouchIntersection: React.PropTypes.func.isRequired,
 };
 
