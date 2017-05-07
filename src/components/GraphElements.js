@@ -7,12 +7,7 @@ import * as Constants from '../utils/Constants';
 import * as networkActions from '../actions/networkActions';
 import * as utils from '../utils/utils';
 
-const getClass = (isSelected, isMoving) => {
-    const baseClass = 'node ';
-    const selectionString = isSelected ? 'node-selected ' : '';
-    const movingString = isMoving ? 'node-moving ' : '';
-    return baseClass + selectionString + movingString;
-};
+
 const getColor = (decimal) => {
     if (typeof decimal === 'undefined') return '';
     const red = Math.round(decimal*255);
@@ -29,7 +24,8 @@ class UnconnectedNode extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            tempLabel: ''
+            tempLabel: '',
+            hoverClass: ''
         };
         // handlers for input
         this._handleKeyPressInput = this._handleKeyPressInput.bind(this);
@@ -38,8 +34,12 @@ class UnconnectedNode extends Component {
         this._handleMouseDown = this._handleMouseDown.bind(this);
         this._handleMouseUp = this._handleMouseUp.bind(this);
         // helpers
-        this.getInputBoxWidthSvg = this.getInputBoxWidthSvg.bind(this);
+        this._getInputBoxWidthSvg = this._getInputBoxWidthSvg.bind(this);
         this._thisNode = this._thisNode.bind(this);
+        this._getClass = this._getClass.bind(this);
+        this._isIntersectedShape = this._isIntersectedShape.bind(this);
+        this._maybeAddHover = this._maybeAddHover.bind(this);
+        this._removeHover = this._removeHover.bind(this);
     }
 
     componentWillReceiveProps(nextProps) {
@@ -80,7 +80,27 @@ class UnconnectedNode extends Component {
         e.stopPropagation();
     }
 
-    getInputBoxWidthSvg() {
+    _getClass(isMoving) {
+        const baseClass = 'node ';
+        const selectionString = this.props.node.get('selected') ? 'node-selected ' : '';
+        const movingString = isMoving ? 'node-moving ' : '';
+        const isConnecting = this._isIntersectedShape() && this.props.mouse.get('isLong');
+        const connectionClass = isConnecting ? 'node-target-hover ' : '';
+        return baseClass + selectionString + movingString + connectionClass + this.state.hoverClass;
+    };
+
+    _maybeAddHover() {
+        const mouse = this.props.mouse;
+        if (mouse.get('isDown')) {
+            if (mouse.get('isLong')) this.setState({hoverClass: 'node-target-hover'});
+            else if (!this._isIntersectedShape()) this.setState({hoverClass: 'node-error-hover'});
+        }
+    }
+    _removeHover() {
+        this.setState({hoverClass: ''})
+    }
+
+    _getInputBoxWidthSvg() {
         const inputBox = this.inputBox;
         const inputBoxWidthHtml = inputBox && this.inputBox.getBoundingClientRect().width;
         console.log('width html', inputBoxWidthHtml);
@@ -90,6 +110,12 @@ class UnconnectedNode extends Component {
     _thisNode() {
         return {shape: 'node', key: this.props.nodeKey};
     }
+    _isIntersectedShape() {
+        const intersectedShape = this.props.mouse.get('intersectedShape');
+        return intersectedShape &&
+            intersectedShape.shape === 'node' &&
+            intersectedShape.key === this.props.nodeKey;
+    }
     _handleTouchStart(e) {
         const touches = e.changedTouches;
         utils.eachTouch(touches, (touch, key) => {
@@ -98,8 +124,7 @@ class UnconnectedNode extends Component {
     }
     _handleMouseDown(e) {
         if (e.button !== 0) return; // only take left mouse clicks
-        const setMouseToLong = () => this.props.updateMouse((mouse) => mouse.set('isLong', true));
-        this.longMouseTimer = setTimeout(setMouseToLong, 1000);
+        this.props.setLongMouseTimer();
         this.props.updateMouse((mouse) => mouse.set('intersectedShape', this._thisNode()));
     }
     _handleMouseUp(e) {
@@ -120,13 +145,15 @@ class UnconnectedNode extends Component {
         return (
             <g>
                 <circle
+                    onMouseEnter={this._maybeAddHover}
+                    onMouseLeave={this._removeHover}
                     onTouchStart={this._handleTouchStart}
                     onMouseDown={this._handleMouseDown}
                     onMouseUp={this._handleMouseUp}
                     cx={cx}
                     cy={cy}
                     r={Constants.CIRCLE_RADIUS}
-                    className={getClass(node.get('selected'), isMoving)}
+                    className={this._getClass(isMoving)}
                     style={{fill: getColor(node.get('centrality'))}}
                 />
                 {
@@ -135,7 +162,7 @@ class UnconnectedNode extends Component {
                             x={cx}
                             y={cy}
                             height={Constants.CIRCLE_RADIUS}
-                            width={this.getInputBoxWidthSvg()}
+                            width={this._getInputBoxWidthSvg()}
                         >
                             <input
                                 autoFocus

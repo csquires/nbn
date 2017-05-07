@@ -1,7 +1,7 @@
 // external
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Map } from 'immutable';
+import { Map, Record } from 'immutable';
 // style
 import '../styles/Canvas.css';
 // components
@@ -29,15 +29,17 @@ const startContact = (contactMap, canvasX, canvasY) => contactMap
     .set('moveX', canvasX)
     .set('moveY', canvasY);
 
-const blankMouse =
-    Map({
+const Mouse =
+    Record({
         isDown: false,
+        isLong: false,
         downX: null,
         downY: null,
         moveX: null,
         moveY: null,
-        intersectedShape: null
+        intersectedShape: null,
     });
+const emptyMouse = new Mouse({});
 
 
 class Canvas extends Component {
@@ -47,7 +49,7 @@ class Canvas extends Component {
         this.state = {
             svgClass: 'tall',
             canvasRect: null,
-            mouse: blankMouse,
+            mouse: emptyMouse,
             touches: Map({}),
         };
         // helpers
@@ -59,6 +61,7 @@ class Canvas extends Component {
         this._moveShape = this._moveShape.bind(this);
         this.resetMouse = this.resetMouse.bind(this);
         this.updateMouse = this.updateMouse.bind(this);
+        this.setLongMouseTimer = this.setLongMouseTimer.bind(this);
         // handlers
         this._handleResize = this._handleResize.bind(this);
         this._handleMouseDown = this._handleMouseDown.bind(this);
@@ -131,6 +134,10 @@ class Canvas extends Component {
                 break;
         }
     }
+    setLongMouseTimer() {
+        const setMouseToLong = () => this.updateMouse((mouse) => mouse.set('isLong', true));
+        this.longMouseTimer = setTimeout(setMouseToLong, 1000);
+    }
 
     // ------------------- HANDLERS --------------------
     _handleResize() {
@@ -201,8 +208,8 @@ class Canvas extends Component {
     }
     _handleMouseMove(e) {
         if (e.button !== 0) return; // only take left mouse clicks
+        if (this.longMouseTimer) clearTimeout(this.longMouseTimer);
         if (this.state.mouse.get('isDown')) {
-            e.preventDefault();
             const [canvasX, canvasY] = this.toCanvasCoordinates(e.pageX, e.pageY);
             this.setState((prevState) => prevState.mouse = prevState.mouse.set('moveX', canvasX).set('moveY', canvasY));
         }
@@ -224,7 +231,7 @@ class Canvas extends Component {
         this.resetMouse();
     }
     resetMouse() {
-        this.setState({mouse: blankMouse});
+        this.setState({mouse: emptyMouse});
     }
     updateMouse(func) {
         this.setState((prevState) => prevState.mouse = func(prevState.mouse));
@@ -276,6 +283,7 @@ class Canvas extends Component {
                             touches={this.state.touches}
                             setTouchIntersection={this.setTouchIntersection}
                             updateMouse={this.updateMouse}
+                            setLongMouseTimer={this.setLongMouseTimer}
                         />
                     )
                 }
