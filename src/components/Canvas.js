@@ -226,7 +226,7 @@ class Canvas extends Component {
             else this._makeNewShape(canvasX, canvasY);
         } else {
             if (intersectedShape) {
-                const shouldConnect = config.SHOULD_CONNECT(mouse.get('isLong'));
+                const shouldConnect = config.SHOULD_CONNECT(mouse);
                 if (!shouldConnect) this._moveShape(intersectedShape, canvasX, canvasY);
             }
         }
@@ -255,7 +255,7 @@ class Canvas extends Component {
                 viewBox={`0 0 ${Constants.SVG_WIDTH} ${Constants.SVG_HEIGHT}`}
             >
                 {
-                    config.SHOULD_CONNECT(mouse.get('isLong')) ?
+                    config.SHOULD_CONNECT(mouse) ?
                         <path d={`
                             M ${mouse.get('downX')} ${mouse.get('downY')} ${mouse.get('moveX')} ${mouse.get('moveY')}
                         `} /> :

@@ -1,5 +1,6 @@
 // external
 import _ from 'lodash';
+import * as config from '../config';
 
 export const listenFor = (commands) => ({transcript, resetTranscript}) => {
     for (const command of commands) {
@@ -42,7 +43,7 @@ export const eachTouch = (touches, f) => {
 export const shapeMatches = (maybeShape, {shape, key}) => maybeShape && maybeShape.shape === shape && maybeShape.key === key;
 export const getMovementInfo = (mouse, touches, {shape, key}) => {
     const didMouseIntersect = shapeMatches(mouse.get('intersectedShape'), {shape, key});
-    const isMovement = !mouse.get('isLong'); // long press is for connecting
+    const isMovement = !config.SHOULD_CONNECT(mouse); // long press is for connecting
     if (didMouseIntersect && isMovement) return {
         cx: mouse.get('moveX'),
         cy: mouse.get('moveY'),
