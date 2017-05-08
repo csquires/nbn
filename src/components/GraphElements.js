@@ -6,6 +6,7 @@ import { connect } from 'react-redux';
 import * as Constants from '../utils/Constants';
 import * as networkActions from '../actions/networkActions';
 import * as utils from '../utils/utils';
+import * as config from '../config';
 
 
 const getColor = (decimal) => {
@@ -84,7 +85,8 @@ class UnconnectedNode extends Component {
         const baseClass = 'node ';
         const selectionString = this.props.node.get('selected') ? 'node-selected ' : '';
         const movingString = isMoving ? 'node-moving ' : '';
-        const isConnecting = this._isIntersectedShape() && this.props.mouse.get('isLong');
+        const shouldConnect = config.SHOULD_CONNECT(this.props.mouse.get('isLong'));
+        const isConnecting = this._isIntersectedShape() && shouldConnect;
         const connectionClass = isConnecting ? 'node-target-hover ' : '';
         return baseClass + selectionString + movingString + connectionClass + this.state.hoverClass;
     };
@@ -92,7 +94,8 @@ class UnconnectedNode extends Component {
     _maybeAddHover() {
         const mouse = this.props.mouse;
         if (mouse.get('isDown')) {
-            if (mouse.get('isLong')) this.setState({hoverClass: 'node-target-hover'});
+            const shouldConnect = config.SHOULD_CONNECT(mouse.get('isLong'));
+            if (shouldConnect) this.setState({hoverClass: 'node-target-hover'});
             else if (!this._isIntersectedShape()) this.setState({hoverClass: 'node-error-hover'});
         }
     }
@@ -131,7 +134,8 @@ class UnconnectedNode extends Component {
         if (e.button !== 0) return; // only take left mouse clicks
         this._removeHover();
         const mouse = this.props.mouse;
-        if (mouse.get('isLong')) {
+        const shouldConnect = config.SHOULD_CONNECT(mouse.get('isLong'));
+        if (shouldConnect) {
             const sourceKey = mouse.get('intersectedShape').key;
             const targetKey = this.props.nodeKey;
             this.props.addConnection(sourceKey, targetKey);

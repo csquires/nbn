@@ -10,6 +10,7 @@ import { Node, Connection } from './GraphElements';
 import * as networkActions from '../actions/networkActions';
 import * as Constants from '../utils/Constants';
 import * as utils from '../utils/utils';
+import * as config from '../config';
 
 const inNodeCircle = (canvasX, canvasY, node) =>
     utils.dist(canvasX, canvasY, node.get('cx'), node.get('cy')) <= Constants.CIRCLE_RADIUS;
@@ -225,7 +226,8 @@ class Canvas extends Component {
             else this._makeNewShape(canvasX, canvasY);
         } else {
             if (intersectedShape) {
-                if (!mouse.get('isLong')) this._moveShape(intersectedShape, canvasX, canvasY);
+                const shouldConnect = config.SHOULD_CONNECT(mouse.get('isLong'));
+                if (!shouldConnect) this._moveShape(intersectedShape, canvasX, canvasY);
             }
         }
         this.resetMouse();
@@ -253,7 +255,7 @@ class Canvas extends Component {
                 viewBox={`0 0 ${Constants.SVG_WIDTH} ${Constants.SVG_HEIGHT}`}
             >
                 {
-                    this.state.mouse.get('isLong') ?
+                    config.SHOULD_CONNECT(mouse.get('isLong')) ?
                         <path d={`
                             M ${mouse.get('downX')} ${mouse.get('downY')} ${mouse.get('moveX')} ${mouse.get('moveY')}
                         `} /> :
