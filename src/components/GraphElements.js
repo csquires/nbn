@@ -129,6 +129,7 @@ class UnconnectedNode extends Component {
     }
     _handleMouseUp(e) {
         if (e.button !== 0) return; // only take left mouse clicks
+        this._removeHover();
         const mouse = this.props.mouse;
         if (mouse.get('isLong')) {
             const sourceKey = mouse.get('intersectedShape').key;
