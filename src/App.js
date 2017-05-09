@@ -6,6 +6,7 @@ import Notifications from 'react-notification-system-redux';
 import Modal from 'react-modal';
 import Dropzone from 'react-dropzone';
 import { Table } from 'react-bootstrap';
+import Immutable from 'immutable';
 // components
 import Canvas from './components/Canvas';
 import ElementSelector from './components/ElementSelector';
@@ -14,7 +15,6 @@ import logo from './logo.svg';
 import './styles/App.css';
 // other
 import * as networkActions from './actions/networkActions';
-import { commandMap } from './reducers/commandReducer';
 import * as notificationActions from './actions/notificationActions';
 import * as modeActions from './actions/modeActions';
 import * as utils from './utils/utils';
@@ -29,7 +29,7 @@ class App extends Component {
             listening: false,
             recognizedSpeech: null
         };
-        this._handleKeyPress = this._handleKeyPress.bind(this);
+        this._handleKeyDown = this._handleKeyDown.bind(this);
         this._handleUploadedFile = this._handleUploadedFile.bind(this);
     }
 
@@ -39,7 +39,8 @@ class App extends Component {
             const networkJson = JSON.parse(this.reader.result);
             this.props.setNetwork(networkJson);
         };
-        window.addEventListener('keypress', this._handleKeyPress);
+        window.addEventListener('keydown', this._handleKeyDown);
+        window.Immutable = Immutable;
         // const SpeechRecognition = SpeechRecognition;
         // this.recognition = new SpeechRecognition();
         // this.recognition.start();
@@ -49,7 +50,7 @@ class App extends Component {
     }
 
     componentWillUnmount() {
-        window.removeEventListener('keypress');
+        window.removeEventListener('keydown');
     }
 
     componentWillReceiveProps(nextProps) {
@@ -85,12 +86,13 @@ class App extends Component {
         window.speechSynthesis.speak(utterance);
     }
 
-    _handleKeyPress(e) {
-        const matchingCommandKey = this.props.commands.findKey((command) => command.get('key') === e.key);
-        if (matchingCommandKey) {
-            const action = this.props.commandMap.get(matchingCommandKey);
-            action();
-            const response = this.props.commands.get(matchingCommandKey).get('response');
+    _handleKeyDown(e) {
+        const matchingCommand = this.props.commands.find((command) => command.get('key') === e.key);
+        if (matchingCommand && utils.hasModifier(e, matchingCommand)) {
+            e.preventDefault();
+            const action = matchingCommand.get('action');
+            this.props.doCommand(action);
+            const response = matchingCommand.get('response');
             if (response && config.SHOULD_SPEAK_ON_KEY_PRESS) this.speak(response);
         }
     }
@@ -151,21 +153,26 @@ class App extends Component {
                     </thead>
                     <tbody>
                     {
-                        this.props.commands.map((command, commandKey) => {
+                        this.props.commands.map((command) => {
                             const title = command.get('title');
                             const key = command.get('key');
+                            const modifier = command.get('modifier');
                             const speech = command.get('command');
                             const response = command.get('response');
+
+                            const [...modifiers] = modifier.filter((m) => m).keys();
+                            const keyText = [...modifiers, key].join('+');
+
                             return (
                                 <tr
                                     onClick={() => {
-                                        const action = this.props.commandMap.get(commandKey);
-                                        action();
+                                        const action = command.get(action);
+                                        this.props.doCommand(action);
                                         if (response && config.SHOULD_SPEAK_ON_BUTTON_PRESS) this.speak(response)}
                                     }
                                 >
                                     <td className='text-left'>{title}</td>
-                                    <td className='text-left'>{key}</td>
+                                    <td className='text-left'>{keyText}</td>
                                     <td className='text-left'>{speech}</td>
                                 </tr>
                             )
@@ -187,7 +194,7 @@ const mapStateToProps = (state) => ({
 
 const mapDispatchToProps = (dispatch) => ({
     undo: () => dispatch(networkActions.undo()),
-    commandMap: commandMap.map((action) => () => dispatch(action())),
+    doCommand: (action) => dispatch(action()),
     showHint: (hintName) => dispatch(notificationActions.showHint(hintName)),
     closeFileUploadModal: () => dispatch(modeActions.closeModal('file_upload')),
     setNetwork: (network) => dispatch(networkActions.setNetwork(network))

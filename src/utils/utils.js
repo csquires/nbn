@@ -1,6 +1,7 @@
 // external
 import _ from 'lodash';
 import * as config from '../config';
+import { MODIFIERS } from '../utils/Constants';
 
 export const listenFor = (commands) => ({transcript, resetTranscript}) => {
     for (const command of commands) {
@@ -68,3 +69,13 @@ export const getNodeMovementInfo = (mouse, touches, key, node) => {
     }
 };
 export const dist = (x1, y1, x2, y2) => Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
+
+export const hasModifier = (e, command) => {
+    const modifier = command.get('modifier');
+    console.log(e);
+    console.log(modifier);
+    const altMatches = modifier.get(MODIFIERS.ALT) === e.altKey;
+    const ctrlMatches = modifier.get(MODIFIERS.CTRL) === e.ctrlKey;
+    const shiftMatches = modifier.get(MODIFIERS.SHIFT) === e.shiftKey;
+    return altMatches && ctrlMatches && shiftMatches;
+};

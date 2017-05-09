@@ -141,3 +141,15 @@ export const labelNode = (key, label) => {
         })
     }
 };
+
+export const zoomIn = () => {
+    return {
+        type: ActionTypes.NETWORK.ZOOM_IN,
+    }
+};
+
+export const zoomOut = () => {
+    return {
+        type: ActionTypes.NETWORK.ZOOM_OUT,
+    }
+};

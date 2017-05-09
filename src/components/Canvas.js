@@ -48,6 +48,7 @@ class Canvas extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            viewBox: {x0: 0, y0: 0, width: Constants.SVG_WIDTH, height: Constants.SVG_HEIGHT},
             svgClass: 'tall',
             canvasRect: null,
             mouse: emptyMouse,
@@ -81,6 +82,17 @@ class Canvas extends Component {
     componentWillUnmount() {
         window.removeEventListener('resize');
     }
+    componentWillReceiveProps(nextProps) {
+        if (nextProps.zoomLevel !== this.props.zoomLevel) {
+            const heightRatio = (Constants.SVG_HEIGHT/Constants.SVG_WIDTH);
+            const zoomStrength = 100;
+            const x0 = nextProps.zoomLevel*zoomStrength;
+            const y0= nextProps.zoomLevel*zoomStrength*heightRatio;
+            const width = Constants.SVG_WIDTH - 2*x0;
+            const height = Constants.SVG_HEIGHT - 2*y0;
+            this.setState({viewBox: {x0, y0, width, height}});
+        }
+    }
 
     // ------------------- HELPERS --------------------
     _setCanvasRect() {
@@ -100,8 +112,8 @@ class Canvas extends Component {
     toCanvasCoordinates(pageX, pageY) {
         const canvasRect = this.state.canvasRect ? this.state.canvasRect : this._setCanvasRect();
         return [
-            (pageX - canvasRect.left)/canvasRect.width*Constants.SVG_WIDTH,
-            (pageY - canvasRect.top - window.scrollY)/canvasRect.height*Constants.SVG_HEIGHT
+            (pageX - canvasRect.left)/canvasRect.width*this.state.viewBox.width + this.state.viewBox.x0,
+            (pageY - canvasRect.top - window.scrollY)/canvasRect.height*this.state.viewBox.height + this.state.viewBox.y0
         ]
     };
     _checkIntersection(canvasX, canvasY) {
@@ -242,6 +254,8 @@ class Canvas extends Component {
 
     render() {
         const mouse = this.state.mouse;
+        const viewBox = this.state.viewBox;
+
         return (
             <svg
                 className={`svg-canvas svg-canvas-${this.state.svgClass}`}
@@ -252,7 +266,7 @@ class Canvas extends Component {
                 onTouchStart={this._handleTouchStart}
                 onTouchMove={this._handleTouchMove}
                 onTouchEnd={this._handleTouchEnd}
-                viewBox={`0 0 ${Constants.SVG_WIDTH} ${Constants.SVG_HEIGHT}`}
+                viewBox={`${viewBox.x0} ${viewBox.y0} ${viewBox.width} ${viewBox.height}`}
             >
                 {
                     config.SHOULD_CONNECT(mouse) ?
@@ -320,6 +334,7 @@ Canvas.propTypes = {
 const mapStateToProps = (state) => {
     const currentShapes = state.shapes.get('present');
     return {
+        zoomLevel: currentShapes.get('zoom_level'),
         nodes: currentShapes.get('nodes'),
         connections: currentShapes.get('connections'),
         interactions: currentShapes.get('interactions'),

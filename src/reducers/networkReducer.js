@@ -18,7 +18,8 @@ const initialState = Map({
         statistics: Map({
             max_centrality: null,
             min_centrality: null
-        })
+        }),
+        zoom_level: 0
     }),
     future: List([])
 });
@@ -176,6 +177,14 @@ const stateReducer = (state, action) => {
             const keysToStrings = (connection) => connection.update('source', num2str).update('target', num2str);
             network = network.update('connections', (connections) => connections.map(keysToStrings).toSet());
             state = network;
+            return state;
+        }
+        case ActionTypes.NETWORK.ZOOM_IN: {
+            state = state.update('zoom_level', (z) => z+1);
+            return state;
+        }
+        case ActionTypes.NETWORK.ZOOM_OUT: {
+            state = state.update('zoom_level', (z) => z-1);
             return state;
         }
         case ActionTypes.CLEAR:
