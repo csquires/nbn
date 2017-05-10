@@ -153,3 +153,12 @@ export const zoomOut = () => {
         type: ActionTypes.NETWORK.ZOOM_OUT,
     }
 };
+
+export const selectNodes = (nodes) => {
+    return {
+        type: ActionTypes.NETWORK.SELECT,
+        payload: {
+            nodes: nodes
+        }
+    }
+};

@@ -32,6 +32,9 @@
     cursor: pointer;
     pointer-events: visible;
 }
+.svg-canvas rect.selection-rect {
+    fill: aliceblue;
+}
 
 .node.node-selected {
     stroke: red;

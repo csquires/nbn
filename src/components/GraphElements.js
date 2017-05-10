@@ -72,7 +72,6 @@ class UnconnectedNode extends Component {
         const movingString = isMoving ? 'node-moving ' : '';
         const mouse = this.props.mouse;
         const shouldConnect = config.SHOULD_CONNECT({mouse}) || this.props.touches.some((touch) => config.SHOULD_CONNECT({touch}));
-        console.log('should connect', shouldConnect);
         const isConnecting = this._isIntersectedShape() && shouldConnect;
         const connectionClass = isConnecting ? 'node-target-hover ' : '';
         return baseClass + selectionString + movingString + connectionClass + this.state.hoverClass;
@@ -119,12 +118,11 @@ class UnconnectedNode extends Component {
     };
     _handleTouchEnd = (e) => {
         const touches = e.changedTouches;
-        utils.eachTouch(touches, (touchEvent, key) => {
-            const sourceKey = this.props.touches.get(key).get('intersectedShape').key;
+        utils.eachTouch(touches, (touchEvent, touchKey) => {
+            const sourceKey = this.props.touches.get(touchKey).get('intersectedShape').key;
             const targetKey = this.props.nodeKey;
-            console.log('source', sourceKey, 'target', targetKey);
             this.props.addConnection(sourceKey, targetKey);
-        })
+        });
     };
 
     // mouse

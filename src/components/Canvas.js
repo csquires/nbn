@@ -147,6 +147,12 @@ class Canvas extends Component {
                 break;
         }
     };
+    _selectNodesInRect = (x1, y1, x2, y2) => {
+        const nodesToSelect = this.props.nodes.filter((node) =>
+            node.get('cx') > x1 && node.get('cy') > y1 && node.get('cx') < x2 && node.get('cy') < y2
+        );
+        this.props.selectNodes(nodesToSelect);
+    };
 
     // ------------------- HANDLERS --------------------
     _handleResize = () => {
@@ -161,12 +167,10 @@ class Canvas extends Component {
         utils.eachTouch(touches, (touch, key) => {
             this._handleSingleTouchStart(touch, key);
         });
-        console.log('handle touch start');
     };
     _handleSingleTouchStart = (touchEvent, key) => {
         const [canvasX, canvasY] = this.toCanvasCoordinates(touchEvent.pageX, touchEvent.pageY);
         this._addTouch(key, canvasX, canvasY);
-        console.log('handle single touch start');
     };
     _handleTouchMove = (e) => {
         e.preventDefault();
@@ -178,7 +182,7 @@ class Canvas extends Component {
     _handleSingleTouchMove = (touchEvent, key) => {
         const [canvasX, canvasY] = this.toCanvasCoordinates(touchEvent.pageX, touchEvent.pageY);
         const correspondingTouch = this.state.touches.get(key);
-        if (this.longTouchTimers[key]) clearTimeout(this.longTouchTimers[key]);
+        if (this.longTouchTimers && this.longTouchTimers[key]) clearTimeout(this.longTouchTimers[key]);
         if (!correspondingTouch) this._addTouch(key, canvasX, canvasY);
         else {
             this.updateTouch(key, (touch) => touch.set('moveX', canvasX).set('moveY', canvasY));
@@ -196,12 +200,15 @@ class Canvas extends Component {
         const intersectedShape = thisTouch.get('intersectedShape');
         if (thisTouch) {
             // didnt move - select shape or create new one
-            if (canvasX === thisTouch.get('downX') && canvasY === thisTouch.get('downY')) {
+            if (matchesStartLocation(thisTouch, canvasX, canvasY)) {
                 if (intersectedShape) this.props.changeShapeSelection(intersectedShape);
                 else this._makeNewShape(canvasX, canvasY);
             } else { // moved - move shape if one was selected
                 const shouldConnect = config.SHOULD_CONNECT({touch: thisTouch});
                 if (intersectedShape && !shouldConnect) this._moveShape(intersectedShape, canvasX, canvasY);
+                else if (!intersectedShape) {
+                    this._selectNodesInRect(thisTouch.get('downX'), thisTouch.get('downY'), canvasX, canvasY);
+                }
             }
             this.setState({
                 touches: this.state.touches.delete(key)
@@ -252,6 +259,7 @@ class Canvas extends Component {
         } else {
             const shouldConnect = config.SHOULD_CONNECT({mouse});
             if (intersectedShape && !shouldConnect) this._moveShape(intersectedShape, canvasX, canvasY);
+            else if (!intersectedShape) this._selectNodesInRect(mouse.get('downX'), mouse.get('downY'), canvasX, canvasY);
         }
         this.resetMouse();
     };
@@ -265,6 +273,23 @@ class Canvas extends Component {
     render() {
         const mouse = this.state.mouse;
         const viewBox = this.state.viewBox;
+        const maybeSelectionRect = (contact) => {
+            if (contact.get('isDown') && !contact.get('intersectedShape')) {
+                const [downX, downY] = [contact.get('downX'), contact.get('downY')];
+                const [moveX, moveY] = [contact.get('moveX'), contact.get('moveY')];
+                const [x1, x2] = downX < moveX ? [downX, moveX] : [moveX, downX];
+                const [y1, y2] = downY < moveY ? [downY, moveY] : [moveY, downY];
+                return (
+                    <rect
+                        className='selection-rect'
+                        x={x1}
+                        y={y1}
+                        width={x2-x1}
+                        height={y2-y1}
+                    />
+                )
+            } else return null;
+        };
 
         return (
             <svg
@@ -286,6 +311,8 @@ class Canvas extends Component {
                         `} /> :
                         null
                 }
+                { maybeSelectionRect(mouse) }
+                { this.state.touches.map(maybeSelectionRect) }
                 {
                     this.state.touches.map((touch) =>
                         config.SHOULD_CONNECT({touch}) ?
@@ -295,20 +322,20 @@ class Canvas extends Component {
                             null
                     )
                 }
-                {
-                    this.state.touches.map((touch) => {
-                        const cx = touch.get('moveX');
-                        const cy = touch.get('moveY');
-                        return (
-                            <circle
-                                cx={cx}
-                                cy={cy}
-                                r={20}
-                                style={{fill: 'red'}}
-                            />
-                        )
-                    })
-                }
+                {/*{*/}
+                    {/*this.state.touches.map((touch) => {*/}
+                        {/*const cx = touch.get('moveX');*/}
+                        {/*const cy = touch.get('moveY');*/}
+                        {/*return (*/}
+                            {/*<circle*/}
+                                {/*cx={cx}*/}
+                                {/*cy={cy}*/}
+                                {/*r={20}*/}
+                                {/*style={{fill: 'red'}}*/}
+                            {/*/>*/}
+                        {/*)*/}
+                    {/*})*/}
+                {/*}*/}
                 {
                     this.props.nodes.map((node, key) =>
                         <Node
@@ -370,6 +397,7 @@ const mapDispatchToProps = (dispatch) => ({
     addConnection: (source, target) => dispatch(networkActions.addConnection(source, target)),
     startLabellingNode: (key) => dispatch(networkActions.startLabellingNode(key)),
     changeShapeSelection: ({shape, key}) => dispatch(networkActions.changeShapeSelection({shape, key})),
+    selectNodes: (nodes) => dispatch(networkActions.selectNodes(nodes)),
     moveNode: (key, cx, cy) => dispatch(networkActions.moveNode(key, cx, cy)),
 });
 
