@@ -124,6 +124,7 @@ const stateReducer = (state, action) => {
                 switch (shape) {
                     case 'node': return ['nodes', key, 'selected'];
                     case 'interaction': return ['interactions', key, 'selected'];
+                    default: return []; // TODO error-handling
                 }
             })();
             const selectionStatus = state.getIn(path);

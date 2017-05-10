@@ -1,5 +1,5 @@
 import ActionTypes from '../utils/ActionTypes';
-import Immutable, { Map } from 'immutable';
+import Immutable from 'immutable';
 
 const initialState = Immutable.fromJS({
     selection: 'node',

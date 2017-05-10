@@ -12,25 +12,30 @@ import * as Constants from '../utils/Constants';
 import * as utils from '../utils/utils';
 import * as config from '../config';
 
-const inNodeCircle = (canvasX, canvasY, node) =>
-    utils.dist(canvasX, canvasY, node.get('cx'), node.get('cy')) <= Constants.CIRCLE_RADIUS;
-const inInteractionBox = (canvasX, canvasY, interaction) =>
-    Math.abs(canvasX - interaction.get('cx')) <= Constants.BOX_WIDTH/2 &&
-        Math.abs(canvasY - interaction.get('cy')) <= Constants.BOX_HEIGHT/2;
+// DEPRECATED
+// const inNodeCircle = (canvasX, canvasY, node) =>
+//     utils.dist(canvasX, canvasY, node.get('cx'), node.get('cy')) <= Constants.CIRCLE_RADIUS;
+// const inInteractionBox = (canvasX, canvasY, interaction) =>
+//     Math.abs(canvasX - interaction.get('cx')) <= Constants.BOX_WIDTH/2 &&
+//         Math.abs(canvasY - interaction.get('cy')) <= Constants.BOX_HEIGHT/2;
 const getClass = (isSelected, isMoving) => {
     const baseClass = 'node ';
     const selectionString = isSelected ? 'node-selected ' : '';
     const movingString = isMoving ? 'node-moving ' : '';
     return baseClass + selectionString + movingString;
 };
+const matchesStartLocation = (contact, canvasX, canvasY) =>
+    canvasX === contact.get('downX') && canvasY === contact.get('downY');
 const Contact =
     Record({
         isDown: false,
-        isLong: false,
         downX: null,
         downY: null,
         moveX: null,
         moveY: null,
+        ctrlKey: false,
+        altKey: false,
+        shiftKey: false,
         intersectedShape: null,
     });
 const emptyContact = new Contact({});
@@ -141,10 +146,6 @@ class Canvas extends Component {
                 break;
         }
     };
-    setLongMouseTimer = () => {
-        const setMouseToLong = () => this.updateMouse((mouse) => mouse.set('isLong', true));
-        this.longMouseTimer = setTimeout(setMouseToLong, 1000);
-    }
 
     // ------------------- HANDLERS --------------------
     _handleResize = () => {
@@ -221,14 +222,13 @@ class Canvas extends Component {
         if (e.button !== 0) return; // only take left mouse clicks
         e.preventDefault();
         const [canvasX, canvasY] = this.toCanvasCoordinates(e.pageX, e.pageY);
-        this.setState((prevState) => prevState.mouse = startContact(prevState.mouse, canvasX, canvasY));
+        this.updateMouse((mouse) => startContact(mouse, canvasX, canvasY));
     };
     _handleMouseMove = (e) => {
         if (e.button !== 0) return; // only take left mouse clicks
-        if (this.longMouseTimer) clearTimeout(this.longMouseTimer);
         if (this.state.mouse.get('isDown')) {
             const [canvasX, canvasY] = this.toCanvasCoordinates(e.pageX, e.pageY);
-            this.setState((prevState) => prevState.mouse = prevState.mouse.set('moveX', canvasX).set('moveY', canvasY));
+            this.updateMouse((mouse) => mouse.set('moveX', canvasX).set('moveY', canvasY));
         }
     };
     _handleMouseUp = (e) => {
@@ -237,7 +237,8 @@ class Canvas extends Component {
         const [canvasX, canvasY] = this.toCanvasCoordinates(e.pageX, e.pageY);
         const mouse = this.state.mouse;
         const intersectedShape = mouse.get('intersectedShape');
-        if (canvasX === mouse.get('downX') && canvasY === mouse.get('downY')) {
+
+        if (matchesStartLocation(mouse, canvasX, canvasY)) {
             if (intersectedShape) this.props.changeShapeSelection(intersectedShape);
             else this._makeNewShape(canvasX, canvasY);
         } else {
@@ -250,7 +251,7 @@ class Canvas extends Component {
     };
     resetMouse = () => {
         this.setState({mouse: emptyContact});
-    }
+    };
     updateMouse = (func) => {
         this.setState((prevState) => prevState.mouse = func(prevState.mouse));
     };
@@ -263,6 +264,7 @@ class Canvas extends Component {
             <svg
                 className={`svg-canvas svg-canvas-${this.state.svgClass}`}
                 ref={(c) => this.canvas = c}
+                //handlers
                 onMouseDown={this._handleMouseDown}
                 onMouseMove={this._handleMouseMove}
                 onMouseUp={this._handleMouseUp}
@@ -302,7 +304,6 @@ class Canvas extends Component {
                             touches={this.state.touches}
                             updateMouse={this.updateMouse}
                             updateTouch={this.updateTouch}
-                            setLongMouseTimer={this.setLongMouseTimer}
                         />
                     )
                 }

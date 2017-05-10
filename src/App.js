@@ -9,7 +9,7 @@ import { Table } from 'react-bootstrap';
 import Immutable from 'immutable';
 // components
 import Canvas from './components/Canvas';
-import ElementSelector from './components/ElementSelector';
+// import ElementSelector from './components/ElementSelector';
 // style
 import logo from './logo.svg';
 import './styles/App.css';
@@ -164,7 +164,7 @@ class App extends Component {
                             return (
                                 <tr
                                     onClick={() => {
-                                        const action = command.get(action);
+                                        const action = command.get('action');
                                         this.props.doCommand(action);
                                         if (response && config.SHOULD_SPEAK_ON_BUTTON_PRESS) this.speak(response)}
                                     }

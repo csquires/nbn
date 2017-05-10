@@ -41,7 +41,7 @@ class UnconnectedNode extends Component {
 
     // ------------------- HELPERS --------------------
     _getInputBoxWidthSvg = () => {
-        const inputBox = this.inputBox;
+        // const inputBox = this.inputBox;
         // const inputBoxWidthHtml = inputBox && this.inputBox.getBoundingClientRect().width;
         return 100;
     };
@@ -123,8 +123,12 @@ class UnconnectedNode extends Component {
     // mouse
     _handleMouseDown = (e) => {
         if (e.button !== 0) return; // only take left mouse clicks
-        this.props.setLongMouseTimer();
-        this.props.updateMouse((mouse) => mouse.set('intersectedShape', this._thisNode()));
+        const hasCtrl = e.ctrlKey;
+        this.props.updateMouse((mouse) =>
+            mouse
+            .set('intersectedShape', this._thisNode())
+            .set('ctrlKey', hasCtrl)
+        );
     };
     _handleMouseUp = (e) => {
         if (e.button !== 0) return; // only take left mouse clicks

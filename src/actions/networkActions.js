@@ -120,7 +120,7 @@ export const startLabellingSelected = () => {
         } else {
             console.log('selected nodes', selectedNodes);
             const maybeSelectedNodeKey = selectedNodes.keySeq().first();
-            const maybeSelectedInteractionKey = selectedInteractions.keySeq().first();
+            // const maybeSelectedInteractionKey = selectedInteractions.keySeq().first();
             if (maybeSelectedNodeKey) dispatch(startLabellingNode(maybeSelectedNodeKey));
             // if (maybeSelectedInteractionKey) {};
         }
@@ -129,9 +129,9 @@ export const startLabellingSelected = () => {
 
 export const labelNode = (key, label) => {
     return (dispatch, getState) => {
-        const nodes = getState().shapes.getIn(['present', 'nodes']);
+        // const nodes = getState().shapes.getIn(['present', 'nodes']);
         console.log('labelling node');
-        const labelAlreadyExists = nodes.some((node) => node.get('label') === label);
+        // const labelAlreadyExists = nodes.some((node) => node.get('label') === label);
         dispatch({
             type: ActionTypes.NODE.LABEL,
             payload: {
