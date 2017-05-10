@@ -50,6 +50,7 @@ export const getMovementInfo = (mouse, touches, {shape, key}) => {
         cy: mouse.get('moveY'),
         isMoving: true
     };
+    // console.log('touches', touches.toJS());
     const matchingTouch = touches.find((touch) => shapeMatches(touch.get('intersectedShape'), {shape, key}));
     if (matchingTouch) return {
         cx: matchingTouch.get('moveX'),

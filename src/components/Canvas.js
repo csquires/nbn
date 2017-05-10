@@ -23,14 +23,7 @@ const getClass = (isSelected, isMoving) => {
     const movingString = isMoving ? 'node-moving ' : '';
     return baseClass + selectionString + movingString;
 };
-const startContact = (contactMap, canvasX, canvasY) => contactMap
-    .set('isDown', true)
-    .set('downX', canvasX)
-    .set('downY', canvasY)
-    .set('moveX', canvasX)
-    .set('moveY', canvasY);
-
-const Mouse =
+const Contact =
     Record({
         isDown: false,
         isLong: false,
@@ -40,7 +33,23 @@ const Mouse =
         moveY: null,
         intersectedShape: null,
     });
-const emptyMouse = new Mouse({});
+const emptyContact = new Contact({});
+
+const startContact = (contactMap, canvasX, canvasY) => contactMap ?
+    contactMap
+        .set('isDown', true)
+        .set('downX', canvasX)
+        .set('downY', canvasY)
+        .set('moveX', canvasX)
+        .set('moveY', canvasY) :
+    emptyContact
+        .set('isDown', true)
+        .set('downX', canvasX)
+        .set('downY', canvasY)
+        .set('moveX', canvasX)
+        .set('moveY', canvasY);
+
+
 
 
 class Canvas extends Component {
@@ -51,27 +60,9 @@ class Canvas extends Component {
             viewBox: {x0: 0, y0: 0, width: Constants.SVG_WIDTH, height: Constants.SVG_HEIGHT},
             svgClass: 'tall',
             canvasRect: null,
-            mouse: emptyMouse,
+            mouse: emptyContact,
             touches: Map({}),
         };
-        // helpers
-        this._setCanvasRect = this._setCanvasRect.bind(this);
-        this._setSvgClass = this._setSvgClass.bind(this);
-        this.toCanvasCoordinates = this.toCanvasCoordinates.bind(this);
-        this._checkIntersection = this._checkIntersection.bind(this);
-        this._makeNewShape = this._makeNewShape.bind(this);
-        this._moveShape = this._moveShape.bind(this);
-        this.resetMouse = this.resetMouse.bind(this);
-        this.updateMouse = this.updateMouse.bind(this);
-        this.setLongMouseTimer = this.setLongMouseTimer.bind(this);
-        // handlers
-        this._handleResize = this._handleResize.bind(this);
-        this._handleMouseDown = this._handleMouseDown.bind(this);
-        this._handleMouseMove = this._handleMouseMove.bind(this);
-        this._handleMouseUp = this._handleMouseUp.bind(this);
-        this._handleTouchStart = this._handleTouchStart.bind(this);
-        this._handleTouchMove = this._handleTouchMove.bind(this);
-        this._handleTouchEnd = this._handleTouchEnd.bind(this);
     }
 
     // ------------------- LIFECYCLE --------------------
@@ -93,14 +84,17 @@ class Canvas extends Component {
             this.setState({viewBox: {x0, y0, width, height}});
         }
     }
+    // componentWillUpdate(_, nextState) {
+    //     console.log('nextState', nextState);
+    // }
 
     // ------------------- HELPERS --------------------
-    _setCanvasRect() {
+    _setCanvasRect = () => {
         const canvasRect = this.canvas.getBoundingClientRect();
         this.setState({canvasRect: canvasRect});
         return canvasRect;
-    }
-    _setSvgClass() {
+    };
+    _setSvgClass = () => {
         const windowHeight = window.innerHeight;
         const windowWidth = window.innerWidth;
         const canvasHeight = windowHeight*.6;
@@ -108,22 +102,22 @@ class Canvas extends Component {
 
         if (shouldSetBasedOnHeight) this.setState({svgClass: 'wide'});
         else this.setState({svgClass: 'tall'});
-    }
-    toCanvasCoordinates(pageX, pageY) {
+    };
+    toCanvasCoordinates = (pageX, pageY) => {
         const canvasRect = this.state.canvasRect ? this.state.canvasRect : this._setCanvasRect();
         return [
             (pageX - canvasRect.left)/canvasRect.width*this.state.viewBox.width + this.state.viewBox.x0,
             (pageY - canvasRect.top - window.scrollY)/canvasRect.height*this.state.viewBox.height + this.state.viewBox.y0
         ]
     };
-    _checkIntersection(canvasX, canvasY) {
+    _checkIntersection = (canvasX, canvasY) => {
         const intersectedNodeKey = this.props.nodes.findKey((node) => inNodeCircle(canvasX, canvasY, node));
         if (intersectedNodeKey) return {shape: 'node', key: intersectedNodeKey};
         const intersectedInteractionKey = this.props.interactions.findKey((interaction) => inInteractionBox(canvasX, canvasY, interaction));
         if (intersectedInteractionKey) return {shape: 'interaction', key: intersectedInteractionKey};
         return false;
-    }
-    _makeNewShape(canvasX, canvasY) {
+    };
+    _makeNewShape = (canvasX, canvasY) => {
         switch (this.props.selection) {
             case 'node':
                 this.props.addNode(canvasX, canvasY);
@@ -137,8 +131,8 @@ class Canvas extends Component {
             default:
                 break;
         }
-    }
-    _moveShape({shape, key}, canvasX, canvasY) {
+    };
+    _moveShape = ({shape, key}, canvasX, canvasY) => {
         switch (shape) {
             case 'node':
                 this.props.moveNode(key, canvasX, canvasY);
@@ -146,88 +140,98 @@ class Canvas extends Component {
             default:
                 break;
         }
-    }
-    setLongMouseTimer() {
+    };
+    setLongMouseTimer = () => {
         const setMouseToLong = () => this.updateMouse((mouse) => mouse.set('isLong', true));
         this.longMouseTimer = setTimeout(setMouseToLong, 1000);
     }
 
     // ------------------- HANDLERS --------------------
-    _handleResize() {
+    _handleResize = () => {
         this._setSvgClass();
         this._setCanvasRect();
-    }
+    };
 
     // touch events
-    _handleTouchStart(e) {
+    _handleTouchStart = (e) => {
         e.preventDefault();
         const touches = e.changedTouches;
         utils.eachTouch(touches, (touch, key) => {
-            const [canvasX, canvasY] = this.toCanvasCoordinates(touch.pageX, touch.pageY);
-            this._addTouch(key, canvasX, canvasY);
-        })
-    }
-    _handleTouchMove(e) {
-        e.preventDefault();
-        const touches = e.changedTouches;
-        utils.eachTouch(touches, (touch, key) => {
-            const [canvasX, canvasY] = this.toCanvasCoordinates(touch.pageX, touch.pageY);
-            const correspondingTouch = this.state.touches.get(key);
-            if (!correspondingTouch) this._addTouch(key, canvasX, canvasY);
-            else {
-                const updatedTouch = correspondingTouch.set('moveX', canvasX).set('moveY', canvasY);
-                this.setState({
-                    touches: this.state.touches.set(key, updatedTouch)
-                })
-            }
-        })
-    }
-    _handleTouchEnd(e) {
-        const touches = e.changedTouches;
-        utils.eachTouch(touches, (touch, key) => {
-            const [canvasX, canvasY] = this.toCanvasCoordinates(touch.pageX, touch.pageY);
-            const thisTouch = this.state.touches.get(key);
-            if (thisTouch) {
-                const maybeIntersection = thisTouch.get('intersectedShape');
-                // didnt move - select shape or create new one
-                if (canvasX === thisTouch.get('downX') && canvasY === thisTouch.get('downY')) {
-                    if (maybeIntersection) this.props.changeShapeSelection(maybeIntersection);
-                    else this._makeNewShape(canvasX, canvasY);
-                } else { // moved - move shape if one was selected
-                    if (maybeIntersection) this._moveShape(maybeIntersection, canvasX, canvasY);
-                }
-                this.setState({
-                    touches: this.state.touches.delete(key)
-                })
-            }
-        })
-    }
-    _addTouch(key, canvasX, canvasY) {
-        this.setState({
-            touches: this.state.touches.update(key, (touch) => startContact(touch, canvasX, canvasY))
+            this._handleSingleTouchStart(touch, key);
         });
-    }
-    setTouchIntersection(touchKey, {shape, key}) {
-        const updateTouch = (touch) => touch.set('intersectedShape', {shape, key});
-        this.setState((prevState) => prevState.touches.update(touchKey, updateTouch));
-    }
+        console.log('handle touch start');
+    };
+    _handleSingleTouchStart = (touchEvent, key) => {
+        const [canvasX, canvasY] = this.toCanvasCoordinates(touchEvent.pageX, touchEvent.pageY);
+        this._addTouch(key, canvasX, canvasY);
+        console.log('handle single touch start');
+    };
+    _handleTouchMove = (e) => {
+        e.preventDefault();
+        const touches = e.changedTouches;
+        utils.eachTouch(touches, (touchEvent, key) => {
+            this._handleSingleTouchMove(touchEvent, key);
+        });
+    };
+    _handleSingleTouchMove = (touchEvent, key) => {
+        const [canvasX, canvasY] = this.toCanvasCoordinates(touchEvent.pageX, touchEvent.pageY);
+        const correspondingTouch = this.state.touches.get(key);
+        if (!correspondingTouch) this._addTouch(key, canvasX, canvasY);
+        else {
+            this.updateTouch(key, (touch) => touch.set('moveX', canvasX).set('moveY', canvasY));
+        }
+    };
+    _handleTouchEnd = (e) => {
+        const touches = e.changedTouches;
+        utils.eachTouch(touches, (touchEvent, key) => {
+            this._handleSingleTouchEnd(touchEvent, key);
+        });
+    };
+    _handleSingleTouchEnd = (touchEvent, key) => {
+        const [canvasX, canvasY] = this.toCanvasCoordinates(touchEvent.pageX, touchEvent.pageY);
+        const thisTouch = this.state.touches.get(key);
+        if (thisTouch) {
+            const maybeIntersection = thisTouch.get('intersectedShape');
+            // didnt move - select shape or create new one
+            if (canvasX === thisTouch.get('downX') && canvasY === thisTouch.get('downY')) {
+                if (maybeIntersection) this.props.changeShapeSelection(maybeIntersection);
+                else this._makeNewShape(canvasX, canvasY);
+            } else { // moved - move shape if one was selected
+                if (maybeIntersection) this._moveShape(maybeIntersection, canvasX, canvasY);
+            }
+            this.setState({
+                touches: this.state.touches.delete(key)
+            })
+        }
+    };
+    _addTouch = (key, canvasX, canvasY) => {
+        this.updateTouch(key, (touch) => startContact(touch, canvasX, canvasY));
+    };
+    updateTouch = (touchKey, func) => {
+        this.setState((prevState) => {
+            const oldTouch = prevState.touches.get(touchKey);
+            const newTouch = oldTouch ? func(oldTouch) : func(emptyContact);
+            const newTouches = prevState.touches.set(touchKey, newTouch);
+            return {touches: newTouches};
+        });
+    };
 
     // mouse events
-    _handleMouseDown(e) {
+    _handleMouseDown = (e) => {
         if (e.button !== 0) return; // only take left mouse clicks
         e.preventDefault();
         const [canvasX, canvasY] = this.toCanvasCoordinates(e.pageX, e.pageY);
         this.setState((prevState) => prevState.mouse = startContact(prevState.mouse, canvasX, canvasY));
-    }
-    _handleMouseMove(e) {
+    };
+    _handleMouseMove = (e) => {
         if (e.button !== 0) return; // only take left mouse clicks
         if (this.longMouseTimer) clearTimeout(this.longMouseTimer);
         if (this.state.mouse.get('isDown')) {
             const [canvasX, canvasY] = this.toCanvasCoordinates(e.pageX, e.pageY);
             this.setState((prevState) => prevState.mouse = prevState.mouse.set('moveX', canvasX).set('moveY', canvasY));
         }
-    }
-    _handleMouseUp(e) {
+    };
+    _handleMouseUp = (e) => {
         if (e.button !== 0) return; // only take left mouse clicks
         e.preventDefault();
         const [canvasX, canvasY] = this.toCanvasCoordinates(e.pageX, e.pageY);
@@ -243,14 +247,14 @@ class Canvas extends Component {
             }
         }
         this.resetMouse();
+    };
+    resetMouse = () => {
+        this.setState({mouse: emptyContact});
     }
-    resetMouse() {
-        this.setState({mouse: emptyMouse});
-    }
-    updateMouse(func) {
+    updateMouse = (func) => {
         this.setState((prevState) => prevState.mouse = func(prevState.mouse));
         console.log('updated mouse');
-    }
+    };
 
     render() {
         const mouse = this.state.mouse;
@@ -297,8 +301,8 @@ class Canvas extends Component {
                             node={node}
                             mouse={this.state.mouse}
                             touches={this.state.touches}
-                            setTouchIntersection={this.setTouchIntersection}
                             updateMouse={this.updateMouse}
+                            updateTouch={this.updateTouch}
                             setLongMouseTimer={this.setLongMouseTimer}
                         />
                     )

@@ -28,21 +28,9 @@ class UnconnectedNode extends Component {
             tempLabel: '',
             hoverClass: ''
         };
-        // handlers for input
-        this._handleKeyPressInput = this._handleKeyPressInput.bind(this);
-        this._handleKeyUpInput = this._handleKeyUpInput.bind(this);
-        // main handlers
-        this._handleMouseDown = this._handleMouseDown.bind(this);
-        this._handleMouseUp = this._handleMouseUp.bind(this);
-        // helpers
-        this._getInputBoxWidthSvg = this._getInputBoxWidthSvg.bind(this);
-        this._thisNode = this._thisNode.bind(this);
-        this._getClass = this._getClass.bind(this);
-        this._isIntersectedShape = this._isIntersectedShape.bind(this);
-        this._maybeAddHover = this._maybeAddHover.bind(this);
-        this._removeHover = this._removeHover.bind(this);
     }
 
+    // ------------------- LIFECYCLE --------------------
     componentWillReceiveProps(nextProps) {
         const shallLabel = nextProps.node.get('is_labelling');
         const wasLabelling = this.props.node.get('is_labelling');
@@ -51,37 +39,33 @@ class UnconnectedNode extends Component {
         }
     }
 
-    // handlers for input
-    _handleKeyPressInput(e) {
-        switch (e.key) {
-            case ('Enter'): {
-                this.props.label(this.props.nodeKey, this.state.tempLabel);
-                break;
-            }
-            default:
-                break;
+    // ------------------- HELPERS --------------------
+    _getInputBoxWidthSvg = () => {
+        const inputBox = this.inputBox;
+        // const inputBoxWidthHtml = inputBox && this.inputBox.getBoundingClientRect().width;
+        return 100;
+    };
+    _thisNode = () => {
+        return {shape: 'node', key: this.props.nodeKey};
+    };
+    _isIntersectedShape = () => {
+        const intersectedShape = this.props.mouse.get('intersectedShape');
+        return intersectedShape &&
+            intersectedShape.shape === 'node' &&
+            intersectedShape.key === this.props.nodeKey;
+    };
+    _maybeAddHover = () => {
+        const mouse = this.props.mouse;
+        if (mouse.get('isDown')) {
+            const shouldConnect = config.SHOULD_CONNECT(mouse);
+            if (shouldConnect) this.setState({hoverClass: 'node-target-hover'});
+            else if (!this._isIntersectedShape()) this.setState({hoverClass: 'node-error-hover'});
         }
-        e.stopPropagation();
-    }
-    _handleClickInput(e) {
-        e.stopPropagation();
-    }
-    _handleMouseDownInput(e) {
-        e.stopPropagation();
-    }
-    _handleKeyUpInput(e) {
-        switch (e.keyCode) {
-            case (27): { // esc
-                this.props.label(this.props.nodeKey, '');
-                break;
-            }
-            default:
-                break;
-        }
-        e.stopPropagation();
-    }
-
-    _getClass(isMoving) {
+    };
+    _removeHover = () => {
+        this.setState({hoverClass: ''})
+    };
+    _getClass = (isMoving) => {
         const baseClass = 'node ';
         const selectionString = this.props.node.get('selected') ? 'node-selected ' : '';
         const movingString = isMoving ? 'node-moving ' : '';
@@ -91,46 +75,58 @@ class UnconnectedNode extends Component {
         return baseClass + selectionString + movingString + connectionClass + this.state.hoverClass;
     };
 
-    _maybeAddHover() {
-        const mouse = this.props.mouse;
-        if (mouse.get('isDown')) {
-            const shouldConnect = config.SHOULD_CONNECT(mouse);
-            if (shouldConnect) this.setState({hoverClass: 'node-target-hover'});
-            else if (!this._isIntersectedShape()) this.setState({hoverClass: 'node-error-hover'});
+    // ------------------- HANDLERS --------------------
+    // on input box
+    _handleKeyPressInput = (e) => {
+        switch (e.key) {
+            case ('Enter'): {
+                this.props.label(this.props.nodeKey, this.state.tempLabel);
+                break;
+            }
+            default:
+                break;
         }
-    }
-    _removeHover() {
-        this.setState({hoverClass: ''})
-    }
+        e.stopPropagation();
+    };
+    _handleClickInput = (e) => {
+        e.stopPropagation();
+    };
+    _handleMouseDownInput = (e) => {
+        e.stopPropagation();
+    };
+    _handleKeyUpInput = (e) => {
+        switch (e.keyCode) {
+            case (27): { // esc
+                this.props.label(this.props.nodeKey, '');
+                break;
+            }
+            default:
+                break;
+        }
+        e.stopPropagation();
+    };
 
-    _getInputBoxWidthSvg() {
-        const inputBox = this.inputBox;
-        const inputBoxWidthHtml = inputBox && this.inputBox.getBoundingClientRect().width;
-        console.log('width html', inputBoxWidthHtml);
-        return 100;
-    }
-
-    _thisNode() {
-        return {shape: 'node', key: this.props.nodeKey};
-    }
-    _isIntersectedShape() {
-        const intersectedShape = this.props.mouse.get('intersectedShape');
-        return intersectedShape &&
-            intersectedShape.shape === 'node' &&
-            intersectedShape.key === this.props.nodeKey;
-    }
-    _handleTouchStart(e) {
+    // touch
+    _handleTouchStart = (e) => {
+        const touches = e.changedTouches;
+        utils.eachTouch(touches, (_, key) => {
+            this.props.updateTouch(key, (touch) => touch.set('intersectedShape', this._thisNode()));
+        });
+    };
+    _handleTouchEnd = (e) => {
         const touches = e.changedTouches;
         utils.eachTouch(touches, (touch, key) => {
-            this.props.setTouchIntersection(key, this._thisNode());
-        });
-    }
-    _handleMouseDown(e) {
+
+        })
+    };
+
+    // mouse
+    _handleMouseDown = (e) => {
         if (e.button !== 0) return; // only take left mouse clicks
         this.props.setLongMouseTimer();
         this.props.updateMouse((mouse) => mouse.set('intersectedShape', this._thisNode()));
-    }
-    _handleMouseUp(e) {
+    };
+    _handleMouseUp = (e) => {
         if (e.button !== 0) return; // only take left mouse clicks
         this._removeHover();
         const mouse = this.props.mouse;
@@ -140,7 +136,7 @@ class UnconnectedNode extends Component {
             const targetKey = this.props.nodeKey;
             this.props.addConnection(sourceKey, targetKey);
         }
-    }
+    };
 
     render() {
         const {mouse, touches, nodeKey, node} = this.props;
@@ -150,14 +146,17 @@ class UnconnectedNode extends Component {
         return (
             <g>
                 <circle
+                    // handlers
                     onMouseEnter={this._maybeAddHover}
                     onMouseLeave={this._removeHover}
                     onTouchStart={this._handleTouchStart}
                     onMouseDown={this._handleMouseDown}
                     onMouseUp={this._handleMouseUp}
+                    // svg attributes
                     cx={cx}
                     cy={cy}
                     r={Constants.CIRCLE_RADIUS}
+                    // style
                     className={this._getClass(isMoving)}
                     style={{fill: getColor(node.get('centrality'))}}
                 />
@@ -174,6 +173,7 @@ class UnconnectedNode extends Component {
                                 ref={(c) => this.inputBox = c}
                                 placeholder={placeholder}
                                 value={this.state.tempLabel}
+                                // handlers
                                 onChange={(e) => this.setState({tempLabel: e.target.value})}
                                 onMouseDown={this._handleMouseDownInput}
                                 onClick={this._handleClickInput}
@@ -215,7 +215,7 @@ UnconnectedNode.propTypes = {
     mouse: mousePropTypes,
     touches: touchesPropTypes,
     updateMouse: React.PropTypes.func.isRequired,
-    setTouchIntersection: React.PropTypes.func.isRequired,
+    updateTouch: React.PropTypes.func.isRequired,
 };
 
 export const Node = connect(mapStateToPropsNode, mapDispatchToPropsNode)(UnconnectedNode);
