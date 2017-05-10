@@ -44,7 +44,7 @@ export const eachTouch = (touches, f) => {
 export const shapeMatches = (maybeShape, {shape, key}) => maybeShape && maybeShape.shape === shape && maybeShape.key === key;
 export const getMovementInfo = (mouse, touches, {shape, key}) => {
     const didMouseIntersect = shapeMatches(mouse.get('intersectedShape'), {shape, key});
-    const isMovement = !config.SHOULD_CONNECT(mouse); // long press is for connecting
+    const isMovement = !config.SHOULD_CONNECT({mouse});
     if (didMouseIntersect && isMovement) return {
         cx: mouse.get('moveX'),
         cy: mouse.get('moveY'),
@@ -52,11 +52,14 @@ export const getMovementInfo = (mouse, touches, {shape, key}) => {
     };
     // console.log('touches', touches.toJS());
     const matchingTouch = touches.find((touch) => shapeMatches(touch.get('intersectedShape'), {shape, key}));
-    if (matchingTouch) return {
-        cx: matchingTouch.get('moveX'),
-        cy: matchingTouch.get('moveY'),
-        isMoving: true
-    };
+    if (matchingTouch) {
+        const isMovementTouch = !config.SHOULD_CONNECT({touch: matchingTouch});
+        if (isMovementTouch) return {
+            cx: matchingTouch.get('moveX'),
+            cy: matchingTouch.get('moveY'),
+            isMoving: true
+        };
+    }
     return null;
 };
 export const getNodeMovementInfo = (mouse, touches, key, node) => {

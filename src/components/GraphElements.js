@@ -49,15 +49,16 @@ class UnconnectedNode extends Component {
         return {shape: 'node', key: this.props.nodeKey};
     };
     _isIntersectedShape = () => {
-        const intersectedShape = this.props.mouse.get('intersectedShape');
-        return intersectedShape &&
-            intersectedShape.shape === 'node' &&
-            intersectedShape.key === this.props.nodeKey;
+        const mouseShape = this.props.mouse.get('intersectedShape');
+        const isIntersectedMouse = utils.shapeMatches(mouseShape, this._thisNode());
+        const touchShapes = this.props.touches.map((t) => t.get('intersectedShape'));
+        const isIntersectedTouch = touchShapes.some((touchShape) => utils.shapeMatches(touchShape, this._thisNode()));
+        return isIntersectedMouse || isIntersectedTouch;
     };
     _maybeAddHover = () => {
         const mouse = this.props.mouse;
         if (mouse.get('isDown')) {
-            const shouldConnect = config.SHOULD_CONNECT(mouse);
+            const shouldConnect = config.SHOULD_CONNECT({mouse});
             if (shouldConnect) this.setState({hoverClass: 'node-target-hover'});
             else if (!this._isIntersectedShape()) this.setState({hoverClass: 'node-error-hover'});
         }
@@ -69,7 +70,9 @@ class UnconnectedNode extends Component {
         const baseClass = 'node ';
         const selectionString = this.props.node.get('selected') ? 'node-selected ' : '';
         const movingString = isMoving ? 'node-moving ' : '';
-        const shouldConnect = config.SHOULD_CONNECT(this.props.mouse);
+        const mouse = this.props.mouse;
+        const shouldConnect = config.SHOULD_CONNECT({mouse}) || this.props.touches.some((touch) => config.SHOULD_CONNECT({touch}));
+        console.log('should connect', shouldConnect);
         const isConnecting = this._isIntersectedShape() && shouldConnect;
         const connectionClass = isConnecting ? 'node-target-hover ' : '';
         return baseClass + selectionString + movingString + connectionClass + this.state.hoverClass;
@@ -111,12 +114,16 @@ class UnconnectedNode extends Component {
         const touches = e.changedTouches;
         utils.eachTouch(touches, (_, key) => {
             this.props.updateTouch(key, (touch) => touch.set('intersectedShape', this._thisNode()));
+            this.props.setLongTouchTimer(key);
         });
     };
     _handleTouchEnd = (e) => {
         const touches = e.changedTouches;
-        utils.eachTouch(touches, (touch, key) => {
-
+        utils.eachTouch(touches, (touchEvent, key) => {
+            const sourceKey = this.props.touches.get(key).get('intersectedShape').key;
+            const targetKey = this.props.nodeKey;
+            console.log('source', sourceKey, 'target', targetKey);
+            this.props.addConnection(sourceKey, targetKey);
         })
     };
 
@@ -134,7 +141,7 @@ class UnconnectedNode extends Component {
         if (e.button !== 0) return; // only take left mouse clicks
         this._removeHover();
         const mouse = this.props.mouse;
-        const shouldConnect = config.SHOULD_CONNECT(mouse);
+        const shouldConnect = config.SHOULD_CONNECT({mouse});
         if (shouldConnect) {
             const sourceKey = mouse.get('intersectedShape').key;
             const targetKey = this.props.nodeKey;
@@ -154,6 +161,7 @@ class UnconnectedNode extends Component {
                     onMouseEnter={this._maybeAddHover}
                     onMouseLeave={this._removeHover}
                     onTouchStart={this._handleTouchStart}
+                    onTouchEnd={this._handleTouchEnd}
                     onMouseDown={this._handleMouseDown}
                     onMouseUp={this._handleMouseUp}
                     // svg attributes

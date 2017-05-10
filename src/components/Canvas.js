@@ -29,6 +29,7 @@ const matchesStartLocation = (contact, canvasX, canvasY) =>
 const Contact =
     Record({
         isDown: false,
+        isLong: false,
         downX: null,
         downY: null,
         moveX: null,
@@ -177,6 +178,7 @@ class Canvas extends Component {
     _handleSingleTouchMove = (touchEvent, key) => {
         const [canvasX, canvasY] = this.toCanvasCoordinates(touchEvent.pageX, touchEvent.pageY);
         const correspondingTouch = this.state.touches.get(key);
+        if (this.longTouchTimers[key]) clearTimeout(this.longTouchTimers[key]);
         if (!correspondingTouch) this._addTouch(key, canvasX, canvasY);
         else {
             this.updateTouch(key, (touch) => touch.set('moveX', canvasX).set('moveY', canvasY));
@@ -191,14 +193,15 @@ class Canvas extends Component {
     _handleSingleTouchEnd = (touchEvent, key) => {
         const [canvasX, canvasY] = this.toCanvasCoordinates(touchEvent.pageX, touchEvent.pageY);
         const thisTouch = this.state.touches.get(key);
+        const intersectedShape = thisTouch.get('intersectedShape');
         if (thisTouch) {
-            const maybeIntersection = thisTouch.get('intersectedShape');
             // didnt move - select shape or create new one
             if (canvasX === thisTouch.get('downX') && canvasY === thisTouch.get('downY')) {
-                if (maybeIntersection) this.props.changeShapeSelection(maybeIntersection);
+                if (intersectedShape) this.props.changeShapeSelection(intersectedShape);
                 else this._makeNewShape(canvasX, canvasY);
             } else { // moved - move shape if one was selected
-                if (maybeIntersection) this._moveShape(maybeIntersection, canvasX, canvasY);
+                const shouldConnect = config.SHOULD_CONNECT({touch: thisTouch});
+                if (intersectedShape && !shouldConnect) this._moveShape(intersectedShape, canvasX, canvasY);
             }
             this.setState({
                 touches: this.state.touches.delete(key)
@@ -215,6 +218,11 @@ class Canvas extends Component {
             const newTouches = prevState.touches.set(touchKey, newTouch);
             return {touches: newTouches};
         });
+    };
+    setLongTouchTimer = (touchKey) => {
+        if (!this.longTouchTimers) this.longTouchTimers = {};
+        const setToLong = () => this.updateTouch(touchKey, (touch) => touch.set('isLong', true));
+        this.longTouchTimers[touchKey] = setTimeout(setToLong, 1000);
     };
 
     // mouse events
@@ -242,10 +250,8 @@ class Canvas extends Component {
             if (intersectedShape) this.props.changeShapeSelection(intersectedShape);
             else this._makeNewShape(canvasX, canvasY);
         } else {
-            if (intersectedShape) {
-                const shouldConnect = config.SHOULD_CONNECT(mouse);
-                if (!shouldConnect) this._moveShape(intersectedShape, canvasX, canvasY);
-            }
+            const shouldConnect = config.SHOULD_CONNECT({mouse});
+            if (intersectedShape && !shouldConnect) this._moveShape(intersectedShape, canvasX, canvasY);
         }
         this.resetMouse();
     };
@@ -274,11 +280,20 @@ class Canvas extends Component {
                 viewBox={`${viewBox.x0} ${viewBox.y0} ${viewBox.width} ${viewBox.height}`}
             >
                 {
-                    config.SHOULD_CONNECT(mouse) ?
+                    config.SHOULD_CONNECT({mouse}) ?
                         <path d={`
                             M ${mouse.get('downX')} ${mouse.get('downY')} ${mouse.get('moveX')} ${mouse.get('moveY')}
                         `} /> :
                         null
+                }
+                {
+                    this.state.touches.map((touch) =>
+                        config.SHOULD_CONNECT({touch}) ?
+                            <path d={`
+                                M ${touch.get('downX')} ${touch.get('downY')} ${touch.get('moveX')} ${touch.get('moveY')}
+                            `} /> :
+                            null
+                    )
                 }
                 {
                     this.state.touches.map((touch) => {
@@ -304,6 +319,7 @@ class Canvas extends Component {
                             touches={this.state.touches}
                             updateMouse={this.updateMouse}
                             updateTouch={this.updateTouch}
+                            setLongTouchTimer={this.setLongTouchTimer}
                         />
                     )
                 }
