@@ -29,10 +29,9 @@ class App extends Component {
             listening: false,
             recognizedSpeech: null
         };
-        this._handleKeyDown = this._handleKeyDown.bind(this);
-        this._handleUploadedFile = this._handleUploadedFile.bind(this);
     }
 
+    // ------------------- LIFECYCLE --------------------
     componentDidMount() {
         this.reader = new FileReader();
         this.reader.onload = () => {
@@ -48,11 +47,9 @@ class App extends Component {
         //     console.log(e);
         // }
     }
-
     componentWillUnmount() {
         window.removeEventListener('keydown');
     }
-
     componentWillReceiveProps(nextProps) {
         const transcript = nextProps.transcript.toLowerCase();
         if (nextProps.numSelected > 1) {
@@ -80,13 +77,15 @@ class App extends Component {
         // this.listenFor(nextProps);
     }
 
-    speak(response) {
+    // ------------------- HELPERS --------------------
+    speak = (response) => {
         const utterance = new SpeechSynthesisUtterance();
         utterance.text = response;
         window.speechSynthesis.speak(utterance);
-    }
+    };
 
-    _handleKeyDown(e) {
+    // ------------------- HANDLERS --------------------
+    _handleKeyDown = (e) => {
         const matchingCommand = this.props.commands.find((command) => command.get('key') === e.key);
         if (matchingCommand && utils.hasModifier(e, matchingCommand)) {
             e.preventDefault();
@@ -95,12 +94,11 @@ class App extends Component {
             const response = matchingCommand.get('response');
             if (response && config.SHOULD_SPEAK_ON_KEY_PRESS) this.speak(response);
         }
-    }
-
-    _handleUploadedFile(files) {
+    };
+    _handleUploadedFile = (files) => {
         const file = files[0];
         this.reader.readAsText(file);
-    }
+    };
 
     render() {
         const defaultBanner = () => {

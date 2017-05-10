@@ -110,13 +110,13 @@ class Canvas extends Component {
             (pageY - canvasRect.top - window.scrollY)/canvasRect.height*this.state.viewBox.height + this.state.viewBox.y0
         ]
     };
-    _checkIntersection = (canvasX, canvasY) => {
-        const intersectedNodeKey = this.props.nodes.findKey((node) => inNodeCircle(canvasX, canvasY, node));
-        if (intersectedNodeKey) return {shape: 'node', key: intersectedNodeKey};
-        const intersectedInteractionKey = this.props.interactions.findKey((interaction) => inInteractionBox(canvasX, canvasY, interaction));
-        if (intersectedInteractionKey) return {shape: 'interaction', key: intersectedInteractionKey};
-        return false;
-    };
+    // _checkIntersection = (canvasX, canvasY) => {
+    //     const intersectedNodeKey = this.props.nodes.findKey((node) => inNodeCircle(canvasX, canvasY, node));
+    //     if (intersectedNodeKey) return {shape: 'node', key: intersectedNodeKey};
+    //     const intersectedInteractionKey = this.props.interactions.findKey((interaction) => inInteractionBox(canvasX, canvasY, interaction));
+    //     if (intersectedInteractionKey) return {shape: 'interaction', key: intersectedInteractionKey};
+    //     return false;
+    // };
     _makeNewShape = (canvasX, canvasY) => {
         switch (this.props.selection) {
             case 'node':
@@ -253,7 +253,6 @@ class Canvas extends Component {
     }
     updateMouse = (func) => {
         this.setState((prevState) => prevState.mouse = func(prevState.mouse));
-        console.log('updated mouse');
     };
 
     render() {
