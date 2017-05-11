@@ -65,11 +65,11 @@ class App extends Component {
                 const commandSpeech = command.get('command');
                 if (utils.includesCloseMatch(transcript, commandSpeech)) {
                     const response = command.get('response');
-                    const action = this.props.commandMap.get(commandKey);
-                    action();
+                    const action = command.get('action');
+                    this.props.doCommand(action);
                     this.props.resetTranscript();
-                    this.setState({listening: false, recognizedSpeech: commandSpeech});
-                    setTimeout(() => this.setState({recognizedSpeech: null}), 2000);
+                    this.setState({recognizedSpeech: commandSpeech});
+                    setTimeout(() => this.setState({recognizedSpeech: null, listening: false}), 2000);
                     if (response && config.SHOULD_SPEAK_ON_BUTTON_PRESS) this.speak(response);
                 }
             })

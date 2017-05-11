@@ -17,7 +17,8 @@ export const listenFor = (commands) => ({transcript, resetTranscript}) => {
 const closeMatchMap = {
     'yo alex': ['no alex', 'young alex', 'your alex', "you're alex"],
     'delete': ['three'],
-    'connect': ['max', 'maps', 'black']
+    'connect': ['max', 'maps', 'black', 'neck', 'net'],
+    'select all': ['select a', 'select oh']
 };
 
 export const includesCloseMatch = (transcript, speechToFind) => {

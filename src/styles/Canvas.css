@@ -22,7 +22,7 @@
 
 .svg-canvas circle {
     stroke: black;
-    fill: none;
+    fill: white;
     cursor: pointer;
     pointer-events: visible;
 }
@@ -54,4 +54,8 @@
 
 .node.error-hover {
     fill: red;
+}
+
+.node-label {
+    cursor: pointer;
 }

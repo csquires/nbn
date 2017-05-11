@@ -418,19 +418,7 @@ class Canvas extends Component {
                         {/*)*/}
                     {/*})*/}
                 {/*}*/}
-                {
-                    this.props.nodes.map((node, key) =>
-                        <Node
-                            key={key}
-                            nodeKey={key}
-                            node={node}
-                            mouse={this.state.mouse}
-                            touch={this.state.touch}
-                            tempData={this.state.tempNodes.get(key)}
-                            setLongTouchTimer={this.setLongTouchTimer}
-                        />
-                    )
-                }
+
                 {
                     this.props.connections.map((connection, key) =>
                         <Connection
@@ -449,6 +437,19 @@ class Canvas extends Component {
                         const selected = interaction.get('selected');
                         return <rect x={x} y={y} width={Constants.BOX_WIDTH} height={Constants.BOX_HEIGHT} className={getClass(selected)}/>;
                     })
+                }
+                {
+                    this.props.nodes.map((node, key) =>
+                        <Node
+                            key={key}
+                            nodeKey={key}
+                            node={node}
+                            mouse={this.state.mouse}
+                            touch={this.state.touch}
+                            tempData={this.state.tempNodes.get(key)}
+                            setLongTouchTimer={this.setLongTouchTimer}
+                        />
+                    )
                 }
             </svg>
             </Hammer>

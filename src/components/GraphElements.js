@@ -124,6 +124,7 @@ class UnconnectedNode extends Component {
                             x={cx}
                             y={cy}
                             textAnchor='middle'
+                            className='node-label'
                         >
                             {node.get('label')}
                         </text>
