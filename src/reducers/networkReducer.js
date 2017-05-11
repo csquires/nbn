@@ -183,6 +183,13 @@ const stateReducer = (state, action) => {
             state = state.setIn(['statistics', 'min_centrality'], orderedCentralities.first());
             return state;
         }
+        case ActionTypes.NETWORK.COMPUTE_SHORTEST_PATH: {
+            const node1 = action.payload.node1;
+            const node2 = action.payload.node2;
+            const connections = state.get('connections');
+            state = state.update('nodes', (nodes) => networkAnalysis.computeShortestPath(nodes, connections, node1, node2));
+            return state;
+        }
         case ActionTypes.NETWORK.SET: {
             const networkJson = action.payload.network_json;
             let network = Immutable.fromJS(networkJson);

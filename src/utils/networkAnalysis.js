@@ -16,3 +16,11 @@ export const computeBetweennessCentralities = (circles, connections) => {
     return circles;
 };
 
+export const computeShortestPath = (circles, connections, node1, node2) => {
+    const G = toGraph(circles, connections);
+    const path = jsnx.bidirectionalShortestPath(G, node1, node2);
+    for (const nodeKey of path) {
+        circles = circles.setIn([nodeKey, 'onShortestPath'], true);
+    }
+    return circles;
+};

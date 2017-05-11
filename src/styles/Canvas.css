@@ -59,3 +59,7 @@
 .node-label {
     cursor: pointer;
 }
+
+.node.node-shortest {
+    fill: black;
+}

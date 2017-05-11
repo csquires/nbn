@@ -80,6 +80,29 @@ export const computeCentralities = () => {
     }
 };
 
+export const computeShortestPath = (node1, node2) => {
+    return {
+        type: ActionTypes.NETWORK.COMPUTE_SHORTEST_PATH,
+        payload: {
+            node1: node1,
+            node2: node2
+        }
+    }
+};
+
+export const computeShortestPathBetweenSelected = () => {
+    return (dispatch, getState) => {
+        const currentNodes = getState().shapes.get('present').get('nodes');
+        const selectedNodeKeys = currentNodes.filter(networkReducer.isSelected).keySeq();
+        if (selectedNodeKeys.size !== 2) return;
+        else {
+            const node1 = selectedNodeKeys.get(0);
+            const node2 = selectedNodeKeys.get(1);
+            dispatch(computeShortestPath(node1, node2));
+        }
+    }
+};
+
 export const setNetwork = (networkJson) => {
     return {
         type: ActionTypes.NETWORK.SET,

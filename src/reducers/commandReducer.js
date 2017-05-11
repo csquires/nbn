@@ -79,6 +79,13 @@ const initialState = Immutable.fromJS({
             action:  networkActions.computeCentralities,
             ...getCommandConfig({key: "t", command: "compute centralities", result: "compute centralities"})
         },
+        compute_shortest_path: {
+            hint_settings: hintSettingsDefault,
+            title: "Compute shortest path",
+            response: 'I found the shortest path between the two nodes',
+            action: networkActions.computeShortestPathBetweenSelected,
+            ...getCommandConfig({key: 'p', modifier: MODIFIERS.CTRL, command: 'shortest path', result: 'find shortest path'})
+        },
         open_upload: {
             hint_settings: hintSettingsDefault,
             title: "Upload a network",

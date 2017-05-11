@@ -49,11 +49,15 @@ class UnconnectedNode extends Component {
         const selectionClass = this.props.node.get('selected') ? 'node-selected ' : '';
         const movingClass = isMoving ? 'node-moving ' : '';
         const sourceClass = this.props.tempData.get('isSource') ? 'source ' : '';
-        return baseClass + selectionClass + movingClass + sourceClass + this.props.tempData.get('hover');
+        const pathClass = this.props.node.get('onShortestPath') ? 'node-shortest ' : '';
+        return baseClass + selectionClass + movingClass + sourceClass + pathClass + this.props.tempData.get('hover');
     };
 
     // ------------------- HANDLERS --------------------
     // on input box
+    _handleKeyDownInput = (e) => {
+        e.stopPropagation();
+    };
     _handleKeyPressInput = (e) => {
         switch (e.key) {
             case ('Enter'): {
@@ -116,6 +120,7 @@ class UnconnectedNode extends Component {
                                 onChange={(e) => this.setState({tempLabel: e.target.value})}
                                 onMouseDown={this._handleMouseDownInput}
                                 onClick={this._handleClickInput}
+                                onKeyDown={this._handleKeyDownInput}
                                 onKeyPress={this._handleKeyPressInput}
                                 onKeyUp={this._handleKeyUpInput}
                             />
