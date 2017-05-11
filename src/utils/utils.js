@@ -42,28 +42,25 @@ export const eachTouch = (touches, f) => {
     });
 };
 export const shapeMatches = (maybeShape, {shape, key}) => maybeShape && maybeShape.shape === shape && maybeShape.key === key;
-export const getMovementInfo = (mouse, touches, {shape, key}) => {
-    const didMouseIntersect = shapeMatches(mouse.get('intersectedShape'), {shape, key});
+export const getMovementInfo = (mouse, touch, {shape, key}) => {
+    const didMouseIntersect = shapeMatches(mouse.get('startShape'), {shape, key});
     const isMovement = !config.SHOULD_CONNECT({mouse});
     if (didMouseIntersect && isMovement) return {
         cx: mouse.get('moveX'),
         cy: mouse.get('moveY'),
         isMoving: true
     };
-    // console.log('touches', touches.toJS());
-    const matchingTouch = touches.find((touch) => shapeMatches(touch.get('intersectedShape'), {shape, key}));
-    if (matchingTouch) {
-        const isMovementTouch = !config.SHOULD_CONNECT({touch: matchingTouch});
-        if (isMovementTouch) return {
-            cx: matchingTouch.get('moveX'),
-            cy: matchingTouch.get('moveY'),
-            isMoving: true
-        };
-    }
+    const didTouchIntersect = shapeMatches(touch.get('startShape'), {shape, key});
+    const isMovementTouch = !config.SHOULD_CONNECT({touch});
+    if (didTouchIntersect && isMovementTouch) return {
+        cx: touch.get('moveX'),
+        cy: touch.get('moveY'),
+        isMoving: true
+    };
     return null;
 };
-export const getNodeMovementInfo = (mouse, touches, key, node) => {
-    const movingCoordinates = getMovementInfo(mouse, touches, {shape: 'node', key: key});
+export const getNodeMovementInfo = (mouse, touch, key, node) => {
+    const movingCoordinates = getMovementInfo(mouse, touch, {shape: 'node', key: key});
     if (movingCoordinates) return movingCoordinates;
     // look up the node if it isn't provided
     return {

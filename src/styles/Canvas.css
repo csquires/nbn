@@ -44,10 +44,14 @@
     fill: yellow;
 }
 
-.node.node-target-hover {
+.node.target-hover {
     fill: blue;
 }
 
-.node.node-error-hover {
+.node.source {
+    fill: blue;
+}
+
+.node.error-hover {
     fill: red;
 }

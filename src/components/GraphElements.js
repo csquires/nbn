@@ -26,7 +26,6 @@ class UnconnectedNode extends Component {
         super(props);
         this.state = {
             tempLabel: '',
-            hoverClass: ''
         };
     }
 
@@ -45,36 +44,12 @@ class UnconnectedNode extends Component {
         // const inputBoxWidthHtml = inputBox && this.inputBox.getBoundingClientRect().width;
         return 100;
     };
-    _thisNode = () => {
-        return {shape: 'node', key: this.props.nodeKey};
-    };
-    _isIntersectedShape = () => {
-        const mouseShape = this.props.mouse.get('intersectedShape');
-        const isIntersectedMouse = utils.shapeMatches(mouseShape, this._thisNode());
-        const touchShapes = this.props.touches.map((t) => t.get('intersectedShape'));
-        const isIntersectedTouch = touchShapes.some((touchShape) => utils.shapeMatches(touchShape, this._thisNode()));
-        return isIntersectedMouse || isIntersectedTouch;
-    };
-    _maybeAddHover = () => {
-        const mouse = this.props.mouse;
-        if (mouse.get('isDown')) {
-            const shouldConnect = config.SHOULD_CONNECT({mouse});
-            if (shouldConnect) this.setState({hoverClass: 'node-target-hover'});
-            else if (!this._isIntersectedShape()) this.setState({hoverClass: 'node-error-hover'});
-        }
-    };
-    _removeHover = () => {
-        this.setState({hoverClass: ''})
-    };
     _getClass = (isMoving) => {
         const baseClass = 'node ';
-        const selectionString = this.props.node.get('selected') ? 'node-selected ' : '';
-        const movingString = isMoving ? 'node-moving ' : '';
-        const mouse = this.props.mouse;
-        const shouldConnect = config.SHOULD_CONNECT({mouse}) || this.props.touches.some((touch) => config.SHOULD_CONNECT({touch}));
-        const isConnecting = this._isIntersectedShape() && shouldConnect;
-        const connectionClass = isConnecting ? 'node-target-hover ' : '';
-        return baseClass + selectionString + movingString + connectionClass + this.state.hoverClass;
+        const selectionClass = this.props.node.get('selected') ? 'node-selected ' : '';
+        const movingClass = isMoving ? 'node-moving ' : '';
+        const sourceClass = this.props.tempData.get('isSource') ? 'source ' : '';
+        return baseClass + selectionClass + movingClass + sourceClass + this.props.tempData.get('hover');
     };
 
     // ------------------- HANDLERS --------------------
@@ -108,60 +83,14 @@ class UnconnectedNode extends Component {
         e.stopPropagation();
     };
 
-    // touch
-    _handleTouchStart = (e) => {
-        const touches = e.changedTouches;
-        utils.eachTouch(touches, (_, key) => {
-            this.props.updateTouch(key, (touch) => touch.set('intersectedShape', this._thisNode()));
-            this.props.setLongTouchTimer(key);
-        });
-    };
-    _handleTouchEnd = (e) => {
-        const touches = e.changedTouches;
-        utils.eachTouch(touches, (touchEvent, touchKey) => {
-            const sourceKey = this.props.touches.get(touchKey).get('intersectedShape').key;
-            const targetKey = this.props.nodeKey;
-            this.props.addConnection(sourceKey, targetKey);
-        });
-    };
-
-    // mouse
-    _handleMouseDown = (e) => {
-        if (e.button !== 0) return; // only take left mouse clicks
-        const hasCtrl = e.ctrlKey;
-        this.props.updateMouse((mouse) =>
-            mouse
-            .set('intersectedShape', this._thisNode())
-            .set('ctrlKey', hasCtrl)
-        );
-    };
-    _handleMouseUp = (e) => {
-        if (e.button !== 0) return; // only take left mouse clicks
-        this._removeHover();
-        const mouse = this.props.mouse;
-        const shouldConnect = config.SHOULD_CONNECT({mouse});
-        if (shouldConnect) {
-            const sourceKey = mouse.get('intersectedShape').key;
-            const targetKey = this.props.nodeKey;
-            this.props.addConnection(sourceKey, targetKey);
-        }
-    };
-
     render() {
-        const {mouse, touches, nodeKey, node} = this.props;
-        const {cx, cy, isMoving} = utils.getNodeMovementInfo(mouse, touches, nodeKey, node);
+        const {mouse, touch, nodeKey, node} = this.props;
+        const {cx, cy, isMoving} = utils.getNodeMovementInfo(mouse, touch, nodeKey, node);
         const placeholder = "label";
 
         return (
             <g>
                 <circle
-                    // handlers
-                    onMouseEnter={this._maybeAddHover}
-                    onMouseLeave={this._removeHover}
-                    onTouchStart={this._handleTouchStart}
-                    onTouchEnd={this._handleTouchEnd}
-                    onMouseDown={this._handleMouseDown}
-                    onMouseUp={this._handleMouseUp}
                     // svg attributes
                     cx={cx}
                     cy={cy}
@@ -223,9 +152,8 @@ UnconnectedNode.propTypes = {
         is_labelling: React.PropTypes.boolean,
     }),
     mouse: mousePropTypes,
-    touches: touchesPropTypes,
-    updateMouse: React.PropTypes.func.isRequired,
-    updateTouch: React.PropTypes.func.isRequired,
+    touch: React.PropTypes.any.isRequired,
+    tempData: React.PropTypes.any.isRequired
 };
 
 export const Node = connect(mapStateToPropsNode, mapDispatchToPropsNode)(UnconnectedNode);
@@ -252,15 +180,15 @@ class UnconnectedConnection extends Component {
 }
 
 const mapStateToPropsConnection = (state, ownProps) => {
-    const {mouse, touches, connection} = ownProps;
+    const {mouse, touch, connection} = ownProps;
     // get source/target keys and nodes
     const [sourceKey, targetKey] = [connection.get('source'), connection.get('target')];
     const nodes = state.shapes.getIn(['present', 'nodes']);
     const [sourceNode, targetNode] = [nodes.get(sourceKey), nodes.get(targetKey)];
     // get cx and cy of source and target and return
-    const sourceMovementInfo = utils.getNodeMovementInfo(mouse, touches, sourceKey, sourceNode);
+    const sourceMovementInfo = utils.getNodeMovementInfo(mouse, touch, sourceKey, sourceNode);
     const [cxSource, cySource] = [sourceMovementInfo.cx, sourceMovementInfo.cy];
-    const targetMovementInfo = utils.getNodeMovementInfo(mouse, touches, targetKey, targetNode);
+    const targetMovementInfo = utils.getNodeMovementInfo(mouse, touch, targetKey, targetNode);
     const [cxTarget, cyTarget] = [targetMovementInfo.cx, targetMovementInfo.cy];
     return {cxSource, cySource, cxTarget, cyTarget};
 };
@@ -275,7 +203,7 @@ UnconnectedConnection.propTypes = {
         target: React.PropTypes.any.isRequired,
     }),
     mouse: mousePropTypes,
-    touches: touchesPropTypes,
+    touch: React.PropTypes.any.isRequired,
 };
 
 export const Connection = connect(mapStateToPropsConnection, mapDispatchToPropsConnection)(UnconnectedConnection);
