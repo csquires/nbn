@@ -28,7 +28,7 @@
 }
 .svg-canvas rect {
     stroke: black;
-    fill: none;
+    fill: white;
     cursor: pointer;
     pointer-events: visible;
 }
@@ -62,4 +62,21 @@
 
 .node.node-shortest {
     fill: black;
+}
+
+.menu-item:hover rect{
+    fill: blue;
+}
+
+text {
+    cursor: pointer;
+}
+
+@keyframes expand {
+    from {opacity: 0.01}
+    to {opacity: 1}
+}
+.menu-item {
+    animation-name: expand;
+    animation-duration: 2s;
 }

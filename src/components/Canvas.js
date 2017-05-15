@@ -61,9 +61,11 @@ const TempNode =
     Record({
         hover: '',
         isSource: false,
+        menuOpen: false
     });
 const emptyTempNode = new TempNode({});
 const isSingleTouch = (e) => e.changedTouches.length === 1;
+
 
 const startContact = (contactMap, canvasX, canvasY) => contactMap ?
     contactMap
@@ -185,6 +187,24 @@ class Canvas extends Component {
         }
     };
     _updateNode = (key, func) => this._updateShape({shape: 'node', key}, func);
+    openMenu = ({shape, key}) => this._updateShape({shape, key}, (shape) => shape.set('menuOpen', true));
+    closeMenu = ({shape, key}) => this._updateShape(({shape, key}) => shape.set('menuOpen', false));
+    matchesMouseStart = ({shape, key}) => utils.shapeMatches(this.state.mouse.startShape, {shape, key});
+    matchesTouchStart = ({shape, key}) => utils.shapeMatches(this.state.touch.startShape, {shape, key});
+    maybeMovingCoordinates = ({shape, key}) => {
+        const mouse = this.state.mouse;
+        const touch = this.state.touch;
+        const isMouseMDragging = !config.SHOULD_CONNECT({mouse});
+        const isTouchDragging = !config.SHOULD_CONNECT({touch});
+        if (this.matchesMouseStart({shape, key}) && isMouseMDragging) {
+            return {movingX: mouse.get('moveX'), movingY: mouse.get('moveY'), isMoving: true}
+        }
+        if (this.matchesTouchStart({shape, key}) && isTouchDragging) {
+            return {movingX: touch.get('moveX'), movingY: touch.get('moveY'), isMoving: true}
+        }
+        return {isMoving: false};
+    };
+
     // store
     _makeNewShape = (canvasX, canvasY) => {
         switch (this.props.selection) {
@@ -277,17 +297,32 @@ class Canvas extends Component {
     };
     //mouse
     _handleMouseDown = (e) => {
-        if (e.button !== 0) return; // only take left mouse clicks
         e.preventDefault();
+        e.stopPropagation();
 
+        if (e.button === 0) {
+            const hasCtrl = e.ctrlKey;
+            const [canvasX, canvasY] = this._toCanvasCoordinates(e.pageX, e.pageY);
+            const startShape = this._checkIntersection(canvasX, canvasY);
+            // updates
+            if (startShape && !hasCtrl) this._updateShape(startShape, (shape) => shape.set('isSource', true));
+            this._updateMouse((mouse) => startContact(mouse, canvasX, canvasY));
+            this._updateMouse((mouse) => mouse.set('startShape', startShape).set('ctrlKey', hasCtrl));
+        }
+        e.stopPropagation();
+    };
+    _handleRightMouseDown = (e) => {
         const hasCtrl = e.ctrlKey;
-        const [canvasX, canvasY] = this._toCanvasCoordinates(e.pageX, e.pageY);
-        const startShape = this._checkIntersection(canvasX, canvasY);
+        if (!hasCtrl) {
+            e.preventDefault();
+            e.stopPropagation();
 
-        // updates
-        if (startShape && !hasCtrl) this._updateShape(startShape, (shape) => shape.set('isSource', true));
-        this._updateMouse((mouse) => startContact(mouse, canvasX, canvasY));
-        this._updateMouse((mouse) => mouse.set('startShape', startShape).set('ctrlKey', hasCtrl));
+            if (e.button === 2) {
+                const [canvasX, canvasY] = this._toCanvasCoordinates(e.pageX, e.pageY);
+                const startShape = this._checkIntersection(canvasX, canvasY);
+                if (startShape) this.openMenu(startShape);
+            }
+        }
     };
     _handleMouseMove = (e) => {
         if (e.button !== 0) return; // only take left mouse clicks
@@ -298,6 +333,8 @@ class Canvas extends Component {
         }
     };
     _handleMouseUp = (e) => {
+        e.stopPropagation();
+
         if (e.button !== 0) return; // only take left mouse clicks
         e.preventDefault();
         const [canvasX, canvasY] = this._toCanvasCoordinates(e.pageX, e.pageY);
@@ -358,7 +395,6 @@ class Canvas extends Component {
         const touch = this.state.touch;
         const viewBox = this.state.viewBox;
 
-
         return (
             <Hammer
                 options={{
@@ -380,6 +416,7 @@ class Canvas extends Component {
                 className={`svg-canvas svg-canvas-${this.state.svgClass}`}
                 ref={(c) => this.canvas = c}
                 //handlers
+                onContextMenu={this._handleRightMouseDown}
                 onMouseDown={this._handleMouseDown}
                 onMouseMove={this._handleMouseMove}
                 onMouseUp={this._handleMouseUp}
@@ -444,8 +481,7 @@ class Canvas extends Component {
                             key={key}
                             nodeKey={key}
                             node={node}
-                            mouse={this.state.mouse}
-                            touch={this.state.touch}
+                            {...this.maybeMovingCoordinates({shape: 'node', key})}
                             tempData={this.state.tempNodes.get(key)}
                             setLongTouchTimer={this.setLongTouchTimer}
                         />

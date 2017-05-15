@@ -2,23 +2,17 @@
 import React, { Component } from 'react';
 import ImmutablePropTypes from 'react-immutable-proptypes';
 import { connect } from 'react-redux';
+// components
+import Menu from './Menu';
 // other
 import * as Constants from '../utils/Constants';
 import * as networkActions from '../actions/networkActions';
 import * as utils from '../utils/utils';
-import * as config from '../config';
 
-
-const getColor = (decimal) => {
-    if (typeof decimal === 'undefined') return '';
-    const red = Math.round(decimal*255);
-    const blue = Math.round((1-decimal)*255);
-    return `rgb(${red},0,${blue})`;
-};
+const stopPropagation = (e) => e.stopPropagation();
 const mousePropTypes = ImmutablePropTypes.contains({
     isDown: React.PropTypes.bool.isRequired
 });
-const touchesPropTypes = ImmutablePropTypes.contains({});
 
 class UnconnectedNode extends Component {
 
@@ -44,20 +38,29 @@ class UnconnectedNode extends Component {
         // const inputBoxWidthHtml = inputBox && this.inputBox.getBoundingClientRect().width;
         return 100;
     };
-    _getClass = (isMoving) => {
+    _getClassName = () => {
         const baseClass = 'node ';
-        const selectionClass = this.props.node.get('selected') ? 'node-selected ' : '';
-        const movingClass = isMoving ? 'node-moving ' : '';
+        // action
         const sourceClass = this.props.tempData.get('isSource') ? 'source ' : '';
+        const movingClass = this.props.isMoving ? 'node-moving ' : '';
+        const selectionClass = this.props.node.get('selected') ? 'node-selected ' : '';
+        // statistics
         const pathClass = this.props.node.get('onShortestPath') ? 'node-shortest ' : '';
         return baseClass + selectionClass + movingClass + sourceClass + pathClass + this.props.tempData.get('hover');
+    };
+    _getStyle = () => {
+        const centrality = this.props.node.get('centrality');
+        const fill = (() => {
+            if (typeof centrality === 'undefined') return '';
+                const red = Math.round(centrality*255);
+                const blue = Math.round((1-centrality)*255);
+                return `rgb(${red},0,${blue})`;
+        })();
+        return {fill};
     };
 
     // ------------------- HANDLERS --------------------
     // on input box
-    _handleKeyDownInput = (e) => {
-        e.stopPropagation();
-    };
     _handleKeyPressInput = (e) => {
         switch (e.key) {
             case ('Enter'): {
@@ -67,12 +70,6 @@ class UnconnectedNode extends Component {
             default:
                 break;
         }
-        e.stopPropagation();
-    };
-    _handleClickInput = (e) => {
-        e.stopPropagation();
-    };
-    _handleMouseDownInput = (e) => {
         e.stopPropagation();
     };
     _handleKeyUpInput = (e) => {
@@ -87,10 +84,34 @@ class UnconnectedNode extends Component {
         e.stopPropagation();
     };
 
+    _getMenu = (cx, cy) => {
+        const menuItems = [
+            {xd: 0, yd: 0, widthd: 1, heightd: .25, text: "Delete", onClick: this.props.deleteNode},
+            {xd: 0, yd: .25, widthd: 1, heightd: .25, text: "Label", onClick: this.props.startLabelling},
+            {xd: 0, yd: .5, widthd: 1, heightd: .25},
+            {xd: 0, yd: .75, widthd: 1, heightd: .25},
+        ];
+        if (this.props.tempData.get('menuOpen')) {
+            return (
+                <Menu
+                    xt={cx}
+                    yt={cy}
+                    menuItems={menuItems}
+                    height={Constants.MENU_HEIGHT}
+                    width={Constants.MENU_WIDTH}
+                />
+            )
+        }
+        return null;
+    };
+
     render() {
-        const {mouse, touch, nodeKey, node} = this.props;
-        const {cx, cy, isMoving} = utils.getNodeMovementInfo(mouse, touch, nodeKey, node);
+        const node = this.props.node;
         const placeholder = "label";
+        const className = this._getClassName();
+        const style = this._getStyle();
+        const menu = this._getMenu(cx, cy);
+        const [cx, cy] = this.props.isMoving ? [this.props.movingX, this.props.movingY] : [node.get('cx'), node.get('cy')];
 
         return (
             <g>
@@ -100,9 +121,10 @@ class UnconnectedNode extends Component {
                     cy={cy}
                     r={Constants.CIRCLE_RADIUS}
                     // style
-                    className={this._getClass(isMoving)}
-                    style={{fill: getColor(node.get('centrality'))}}
+                    className={className}
+                    style={style}
                 />
+                { menu }
                 {
                     node.get('is_labelling') ?
                         <foreignObject
@@ -118,9 +140,9 @@ class UnconnectedNode extends Component {
                                 value={this.state.tempLabel}
                                 // handlers
                                 onChange={(e) => this.setState({tempLabel: e.target.value})}
-                                onMouseDown={this._handleMouseDownInput}
-                                onClick={this._handleClickInput}
-                                onKeyDown={this._handleKeyDownInput}
+                                onMouseDown={stopPropagation}
+                                onClick={stopPropagation}
+                                onKeyDown={stopPropagation}
                                 onKeyPress={this._handleKeyPressInput}
                                 onKeyUp={this._handleKeyUpInput}
                             />
@@ -143,10 +165,15 @@ const mapStateToPropsNode = (state) => ({
 
 });
 
-const mapDispatchToPropsNode = (dispatch) => ({
-    label: (key, label) => dispatch(networkActions.labelNode(key, label)),
-    addConnection: (source, target) => dispatch(networkActions.addConnection(source, target)),
-});
+const mapDispatchToPropsNode = (dispatch, ownProps) => {
+    const key = ownProps.nodeKey;
+    return {
+        label: (key, label) => dispatch(networkActions.labelNode(key, label)),
+        addConnection: (source, target) => dispatch(networkActions.addConnection(source, target)),
+        deleteNode: () => dispatch(networkActions.deleteNode(key)),
+        startLabelling  : () => dispatch(networkActions.startLabellingNode(key))
+    }
+};
 
 UnconnectedNode.propTypes = {
     nodeKey: React.PropTypes.number.isRequired,
@@ -157,8 +184,6 @@ UnconnectedNode.propTypes = {
         centrality: React.PropTypes.number,
         is_labelling: React.PropTypes.boolean,
     }),
-    mouse: mousePropTypes,
-    touch: React.PropTypes.any.isRequired,
     tempData: React.PropTypes.any.isRequired
 };
 

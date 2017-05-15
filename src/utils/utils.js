@@ -21,6 +21,13 @@ const closeMatchMap = {
     'select all': ['select a', 'select oh']
 };
 
+export const stopPropagation = (e) => e.stopPropagation();
+export const onLeftClick = (func) => (e) => {
+    if (e.button === 0) {
+        func && func(e);
+        e.stopPropagation();
+    }
+};
 export const includesCloseMatch = (transcript, speechToFind) => {
     if (transcript.includes(speechToFind)) return true;
     const matches = closeMatchMap[speechToFind];

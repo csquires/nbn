@@ -123,6 +123,15 @@ export const moveNode = (key, cx, cy) => {
     }
 };
 
+export const deleteNode = (key) => {
+    return {
+        type: ActionTypes.NODE.DELETE,
+        payload: {
+            key: key
+        }
+    }
+};
+
 export const startLabellingNode = (key) => {
     return {
         type: ActionTypes.NODE.BEGIN_LABEL,

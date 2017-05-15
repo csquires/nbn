@@ -67,6 +67,7 @@ const deselect = (shape) => shape.set('selected', false);
 
 const stateReducer = (state, action) => {
     switch(action.type) {
+        // nodes
         case ActionTypes.NODE.ADD: {
             const newNodeKey = state.get('last_node_key') + 1;
             state =
@@ -96,6 +97,12 @@ const stateReducer = (state, action) => {
             state = state.updateIn(['nodes', key], (node) => node.set('label', label).set('is_labelling', false));
             return state;
         }
+        case ActionTypes.NODE.DELETE: {
+           const key = action.payload.key;
+           state = state.update('nodes', (nodes) => nodes.delete(key));
+           return state;
+        }
+        // connections
         case ActionTypes.CONNECTION.ADD: {
             state =
                 state.update('connections', (connections) => connections.add(
