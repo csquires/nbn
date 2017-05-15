@@ -110,8 +110,8 @@ class UnconnectedNode extends Component {
         const placeholder = "label";
         const className = this._getClassName();
         const style = this._getStyle();
-        const menu = this._getMenu(cx, cy);
         const [cx, cy] = this.props.isMoving ? [this.props.movingX, this.props.movingY] : [node.get('cx'), node.get('cy')];
+        const menu = this._getMenu(cx, cy);
 
         return (
             <g>
