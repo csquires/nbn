@@ -187,8 +187,7 @@ class Canvas extends Component {
         }
     };
     _updateNode = (key, func) => this._updateShape({shape: 'node', key}, func);
-    openMenu = ({shape, key}) => this._updateShape({shape, key}, (shape) => shape.set('menuOpen', true));
-    closeMenu = ({shape, key}) => this._updateShape(({shape, key}) => shape.set('menuOpen', false));
+    changeMenuOpen = ({shape, key}) => this._updateShape({shape, key}, (shape) => shape.update('menuOpen', (b) => !b));
     matchesMouseStart = ({shape, key}) => utils.shapeMatches(this.state.mouse.startShape, {shape, key});
     matchesTouchStart = ({shape, key}) => utils.shapeMatches(this.state.touch.startShape, {shape, key});
     maybeMovingCoordinates = ({shape, key}) => {
@@ -320,7 +319,7 @@ class Canvas extends Component {
             if (e.button === 2) {
                 const [canvasX, canvasY] = this._toCanvasCoordinates(e.pageX, e.pageY);
                 const startShape = this._checkIntersection(canvasX, canvasY);
-                if (startShape) this.openMenu(startShape);
+                if (startShape) this.changeMenuOpen(startShape);
             }
         }
     };
