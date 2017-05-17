@@ -25,6 +25,7 @@
     "react-notification-system": "^0.2.13",
     "react-notification-system-redux": "^1.0.11",
     "react-redux": "^5.0.4",
+    "react-scripts": "^0.9.5",
     "react-shapes": "^0.1.0",
     "react-speech-recognition": "^1.0.1",
     "react-transition-group": "^1.1.3",
