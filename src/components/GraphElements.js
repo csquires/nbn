@@ -85,11 +85,17 @@ class UnconnectedNode extends Component {
     };
 
     _getMenu = (cx, cy) => {
+        const statisticsMenu = [
+            {xd: 0, yd: 0, widthd: 1, heightd: .25, text: "centrality", onClick: this.props.computeCentralities}
+        ];
+        const attributesMenu = [
+            {xd: 0, yd: 0, widthd: 1, heightd: .25, text: "Add attribute"}
+        ];
         const menuItems = [
             {xd: 0, yd: 0, widthd: 1, heightd: .25, text: "Delete", onClick: this.props.deleteNode},
             {xd: 0, yd: .25, widthd: 1, heightd: .25, text: "Label", onClick: this.props.startLabelling},
-            {xd: 0, yd: .5, widthd: 1, heightd: .25},
-            {xd: 0, yd: .75, widthd: 1, heightd: .25},
+            {xd: 0, yd: .5, widthd: 1, heightd: .25, text: "Statistics", subMenu: statisticsMenu},
+            {xd: 0, yd: .75, widthd: 1, heightd: .25, text: "Attributes", subMenu: attributesMenu},
         ];
         if (this.props.tempData.get('menuOpen')) {
             return (
@@ -171,7 +177,8 @@ const mapDispatchToPropsNode = (dispatch, ownProps) => {
         label: (key, label) => dispatch(networkActions.labelNode(key, label)),
         addConnection: (source, target) => dispatch(networkActions.addConnection(source, target)),
         deleteNode: () => dispatch(networkActions.deleteNode(key)),
-        startLabelling  : () => dispatch(networkActions.startLabellingNode(key))
+        startLabelling: () => dispatch(networkActions.startLabellingNode(key)),
+        computeCentralities: () => dispatch(networkActions.computeCentralities()),
     }
 };
 
